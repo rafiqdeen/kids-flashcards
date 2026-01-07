@@ -1,0 +1,533 @@
+.flashcard-container {
+  perspective: 1200px;
+  cursor: pointer;
+  width: 100%;
+  animation: cardEntrance 0.5s ease-out backwards;
+}
+
+/* Staggered entrance - set via inline style or nth-child */
+.card-grid-item:nth-child(1) .flashcard-container { animation-delay: 0.05s; }
+.card-grid-item:nth-child(2) .flashcard-container { animation-delay: 0.1s; }
+.card-grid-item:nth-child(3) .flashcard-container { animation-delay: 0.15s; }
+.card-grid-item:nth-child(4) .flashcard-container { animation-delay: 0.2s; }
+.card-grid-item:nth-child(5) .flashcard-container { animation-delay: 0.25s; }
+.card-grid-item:nth-child(6) .flashcard-container { animation-delay: 0.3s; }
+.card-grid-item:nth-child(7) .flashcard-container { animation-delay: 0.35s; }
+.card-grid-item:nth-child(8) .flashcard-container { animation-delay: 0.4s; }
+.card-grid-item:nth-child(n+9) .flashcard-container { animation-delay: 0.45s; }
+
+@keyframes cardEntrance {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.flashcard {
+  width: 100%;
+  height: 340px;
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease;
+  border-radius: var(--radius-xl);
+  animation: gentleFloat 4s ease-in-out infinite;
+}
+
+/* Subtle floating animation */
+@keyframes gentleFloat {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+.flashcard.flipped {
+  transform: rotateY(180deg);
+  animation: none;
+}
+
+.flashcard-front,
+.flashcard-back {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  border-radius: var(--radius-xl);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  box-sizing: border-box;
+  overflow: hidden;
+  /* Glassmorphism base */
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.2) 0%,
+    rgba(255, 255, 255, 0.05) 100%
+  );
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.15),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+/* Gradient overlay for color */
+.flashcard-front::before,
+.flashcard-back::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  opacity: 0.85;
+  border-radius: var(--radius-xl);
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+/* Shine sweep effect */
+.flashcard-front::after,
+.flashcard-back::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    45deg,
+    transparent 40%,
+    rgba(255, 255, 255, 0.2) 50%,
+    transparent 60%
+  );
+  transform: translateX(-100%);
+  transition: transform 0.8s ease;
+  pointer-events: none;
+}
+
+.flashcard-container:hover .flashcard-front::after,
+.flashcard-container:hover .flashcard-back::after {
+  transform: translateX(100%);
+}
+
+.flashcard-front {
+  color: white;
+}
+
+.flashcard-front::before {
+  background: linear-gradient(145deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+}
+
+.flashcard-back {
+  color: white;
+  transform: rotateY(180deg);
+}
+
+.flashcard-back::before {
+  background: linear-gradient(145deg, #ec4899 0%, #f43f5e 50%, #fb7185 100%);
+}
+
+/* Card type variations - using ::before for gradient overlay */
+.alphabet .flashcard-front::before {
+  background: linear-gradient(145deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+}
+.alphabet .flashcard-back::before {
+  background: linear-gradient(145deg, #f472b6 0%, #ec4899 50%, #db2777 100%);
+}
+.alphabet .flashcard-container:hover .flashcard {
+  box-shadow: 0 20px 40px rgba(99, 102, 241, 0.3), 0 0 60px rgba(139, 92, 246, 0.2);
+}
+
+.numbers .flashcard-front::before {
+  background: linear-gradient(145deg, #14b8a6 0%, #10b981 50%, #059669 100%);
+}
+.numbers .flashcard-back::before {
+  background: linear-gradient(145deg, #fbbf24 0%, #f59e0b 50%, #d97706 100%);
+}
+.numbers .flashcard-container:hover .flashcard {
+  box-shadow: 0 20px 40px rgba(20, 184, 166, 0.3), 0 0 60px rgba(16, 185, 129, 0.2);
+}
+
+.animals .flashcard-front::before {
+  background: linear-gradient(145deg, #f43f5e 0%, #e11d48 50%, #be123c 100%);
+}
+.animals .flashcard-back::before {
+  background: linear-gradient(145deg, #a855f7 0%, #9333ea 50%, #7c3aed 100%);
+}
+.animals .flashcard-container:hover .flashcard {
+  box-shadow: 0 20px 40px rgba(244, 63, 94, 0.3), 0 0 60px rgba(225, 29, 72, 0.2);
+}
+
+.fruits .flashcard-front::before {
+  background: linear-gradient(145deg, #f59e0b 0%, #f97316 50%, #ef4444 100%);
+}
+.fruits .flashcard-back::before {
+  background: linear-gradient(145deg, #fbbf24 0%, #f59e0b 50%, #d97706 100%);
+}
+.fruits .flashcard-container:hover .flashcard {
+  box-shadow: 0 20px 40px rgba(245, 158, 11, 0.3), 0 0 60px rgba(249, 115, 22, 0.2);
+}
+
+.vegetables .flashcard-front::before {
+  background: linear-gradient(145deg, #22c55e 0%, #16a34a 50%, #15803d 100%);
+}
+.vegetables .flashcard-back::before {
+  background: linear-gradient(145deg, #84cc16 0%, #65a30d 50%, #4d7c0f 100%);
+}
+.vegetables .flashcard-container:hover .flashcard {
+  box-shadow: 0 20px 40px rgba(34, 197, 94, 0.3), 0 0 60px rgba(22, 163, 74, 0.2);
+}
+
+.birds .flashcard-front::before {
+  background: linear-gradient(145deg, #0ea5e9 0%, #0284c7 50%, #3b82f6 100%);
+}
+.birds .flashcard-back::before {
+  background: linear-gradient(145deg, #38bdf8 0%, #0ea5e9 50%, #0284c7 100%);
+}
+.birds .flashcard-container:hover .flashcard {
+  box-shadow: 0 20px 40px rgba(14, 165, 233, 0.3), 0 0 60px rgba(2, 132, 199, 0.2);
+}
+
+.colors .flashcard-front::before,
+.colors\ \&\ shapes .flashcard-front::before {
+  background: linear-gradient(145deg, #a855f7 0%, #9333ea 50%, #ec4899 100%);
+}
+.colors .flashcard-back::before,
+.colors\ \&\ shapes .flashcard-back::before {
+  background: linear-gradient(145deg, #f0abfc 0%, #e879f9 50%, #d946ef 100%);
+}
+.colors .flashcard-container:hover .flashcard,
+.colors\ \&\ shapes .flashcard-container:hover .flashcard {
+  box-shadow: 0 20px 40px rgba(168, 85, 247, 0.3), 0 0 60px rgba(147, 51, 234, 0.2);
+}
+
+.vehicles .flashcard-front::before {
+  background: linear-gradient(145deg, #ef4444 0%, #f97316 50%, #fb923c 100%);
+}
+.vehicles .flashcard-back::before {
+  background: linear-gradient(145deg, #f97316 0%, #fb923c 50%, #fbbf24 100%);
+}
+.vehicles .flashcard-container:hover .flashcard {
+  box-shadow: 0 20px 40px rgba(239, 68, 68, 0.3), 0 0 60px rgba(249, 115, 22, 0.2);
+}
+
+.body\ parts .flashcard-front::before {
+  background: linear-gradient(145deg, #ec4899 0%, #f472b6 50%, #f9a8d4 100%);
+}
+.body\ parts .flashcard-back::before {
+  background: linear-gradient(145deg, #f472b6 0%, #f9a8d4 50%, #fce7f3 100%);
+}
+.body\ parts .flashcard-container:hover .flashcard {
+  box-shadow: 0 20px 40px rgba(236, 72, 153, 0.3), 0 0 60px rgba(244, 114, 182, 0.2);
+}
+
+.weather .flashcard-front::before {
+  background: linear-gradient(145deg, #06b6d4 0%, #0ea5e9 50%, #38bdf8 100%);
+}
+.weather .flashcard-back::before {
+  background: linear-gradient(145deg, #0ea5e9 0%, #38bdf8 50%, #7dd3fc 100%);
+}
+.weather .flashcard-container:hover .flashcard {
+  box-shadow: 0 20px 40px rgba(6, 182, 212, 0.3), 0 0 60px rgba(14, 165, 233, 0.2);
+}
+
+.emotions .flashcard-front::before {
+  background: linear-gradient(145deg, #eab308 0%, #f59e0b 50%, #fbbf24 100%);
+}
+.emotions .flashcard-back::before {
+  background: linear-gradient(145deg, #f59e0b 0%, #fbbf24 50%, #fcd34d 100%);
+}
+.emotions .flashcard-container:hover .flashcard {
+  box-shadow: 0 20px 40px rgba(234, 179, 8, 0.3), 0 0 60px rgba(245, 158, 11, 0.2);
+}
+
+.flip-hint {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 14px;
+  font-weight: 600;
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.flip-hint::before {
+  content: '👆';
+  font-size: 16px;
+  animation: bounce 1.5s ease-in-out infinite;
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+/* Card content styling */
+.card-image {
+  width: 160px;
+  height: 160px;
+  object-fit: contain;
+  margin-bottom: 16px;
+  filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.25));
+  position: relative;
+  z-index: 1;
+}
+
+.card-emoji {
+  font-size: 90px;
+  margin-bottom: 12px;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.15));
+  position: relative;
+  z-index: 1;
+}
+
+.card-letter,
+.card-number {
+  font-size: 100px;
+  font-weight: 900;
+  text-shadow:
+    3px 3px 0 rgba(0, 0, 0, 0.15),
+    0 0 30px rgba(255, 255, 255, 0.3);
+  position: relative;
+  z-index: 1;
+}
+
+.card-word {
+  font-size: 32px;
+  font-weight: 800;
+  text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.1);
+  position: relative;
+  z-index: 1;
+  text-align: center;
+}
+
+.card-word-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 12px;
+  position: relative;
+  z-index: 1;
+}
+
+.card-word-row .card-word {
+  margin-top: 0;
+}
+
+.speak-button {
+  background: rgba(255, 255, 255, 0.25);
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: white;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  flex-shrink: 0;
+}
+
+.speak-button:hover {
+  background: rgba(255, 255, 255, 0.4);
+  transform: scale(1.15);
+  box-shadow: 0 4px 15px rgba(255, 255, 255, 0.3);
+}
+
+.speak-button:active {
+  transform: scale(0.95);
+}
+
+.speak-button svg {
+  width: 22px;
+  height: 22px;
+}
+
+.card-hint {
+  font-size: 15px;
+  opacity: 0.9;
+  margin-top: 6px;
+  text-align: center;
+  font-weight: 600;
+  position: relative;
+  z-index: 1;
+}
+
+.card-visual {
+  font-size: 24px;
+  letter-spacing: 3px;
+  margin-top: 10px;
+  position: relative;
+  z-index: 1;
+}
+
+/* Hover effect - 3D tilt */
+.flashcard-container:hover .flashcard:not(.flipped) {
+  transform: rotateY(8deg) rotateX(4deg) translateY(-8px);
+  animation: none;
+}
+
+.flashcard-container:hover .flashcard.flipped {
+  transform: rotateY(172deg) rotateX(4deg) translateY(-8px);
+  animation: none;
+}
+
+/* Bouncy image/emoji on hover */
+.flashcard-container:hover .card-image,
+.flashcard-container:hover .card-emoji {
+  animation: wiggle 0.5s ease-in-out;
+}
+
+@keyframes wiggle {
+  0%, 100% { transform: rotate(0deg) scale(1); }
+  25% { transform: rotate(-5deg) scale(1.05); }
+  75% { transform: rotate(5deg) scale(1.05); }
+}
+
+/* Responsive adjustments */
+@media (max-width: 1100px) {
+  .flashcard {
+    height: 320px;
+  }
+
+  .card-image {
+    width: 140px;
+    height: 140px;
+  }
+
+  .card-emoji {
+    font-size: 80px;
+  }
+
+  .card-letter,
+  .card-number {
+    font-size: 85px;
+  }
+
+  .card-word {
+    font-size: 28px;
+  }
+
+  .card-hint {
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 800px) {
+  .flashcard {
+    height: 300px;
+    border-radius: 24px;
+  }
+
+  .flashcard-front,
+  .flashcard-back {
+    padding: 16px;
+    border-radius: 24px;
+  }
+
+  .card-image {
+    width: 120px;
+    height: 120px;
+  }
+
+  .card-emoji {
+    font-size: 65px;
+  }
+
+  .card-letter,
+  .card-number {
+    font-size: 70px;
+  }
+
+  .card-word {
+    font-size: 24px;
+  }
+
+  .card-hint {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 500px) {
+  .flashcard {
+    height: 280px;
+    border-radius: 20px;
+  }
+
+  .flashcard-front,
+  .flashcard-back {
+    padding: 16px;
+    border-radius: 20px;
+  }
+
+  .card-image {
+    width: 110px;
+    height: 110px;
+  }
+
+  .card-emoji {
+    font-size: 70px;
+    margin-bottom: 6px;
+  }
+
+  .card-letter,
+  .card-number {
+    font-size: 80px;
+  }
+
+  .card-word {
+    font-size: 22px;
+  }
+
+  .card-hint {
+    font-size: 13px;
+  }
+
+  .card-visual {
+    font-size: 18px;
+    letter-spacing: 2px;
+  }
+}
+
+/* Reduced motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .flashcard-container,
+  .flashcard {
+    animation: none;
+  }
+
+  .flashcard-container:hover .flashcard:not(.flipped) {
+    transform: translateY(-4px);
+  }
+
+  .flashcard-container:hover .flashcard.flipped {
+    transform: rotateY(180deg) translateY(-4px);
+  }
+
+  .flashcard-container:hover .card-image {
+    animation: none;
+  }
+
+  .flashcard-front::after,
+  .flashcard-back::after {
+    display: none;
+  }
+}
