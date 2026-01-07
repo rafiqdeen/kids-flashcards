@@ -122,94 +122,105 @@ function App() {
   };
 
   const renderCardFront = (card) => {
+    const categoryName = getCategoryName();
+
     switch (currentCategory) {
       case 'alphabet':
         return (
           <>
+            <span className="card-category">{categoryName}</span>
             <span className="card-letter">{card.letter}</span>
-            <span className="card-hint">Tap to see!</span>
+            <span className="card-tap-hint">Tap to reveal</span>
           </>
         );
       case 'numbers':
         return (
           <>
+            <span className="card-category">{categoryName}</span>
             <span className="card-number">{card.number}</span>
-            <span className="card-hint">{card.word}</span>
+            <span className="card-tap-hint">Tap to reveal</span>
           </>
         );
       case 'animals':
         return (
           <>
+            <span className="card-category">{categoryName}</span>
             <span className="card-emoji" role="img" aria-label={card.name}>{card.emoji}</span>
-            <span className="card-hint">What animal is this?</span>
+            <span className="card-tap-hint">Tap to reveal</span>
           </>
         );
       case 'fruits':
         return (
           <>
+            <span className="card-category">{categoryName}</span>
             <span className="card-emoji" role="img" aria-label={card.name}>{card.emoji}</span>
-            <span className="card-hint">What fruit is this?</span>
+            <span className="card-tap-hint">Tap to reveal</span>
           </>
         );
       case 'vegetables':
         return (
           <>
+            <span className="card-category">{categoryName}</span>
             <span className="card-emoji" role="img" aria-label={card.name}>{card.emoji}</span>
-            <span className="card-hint">What vegetable is this?</span>
+            <span className="card-tap-hint">Tap to reveal</span>
           </>
         );
       case 'birds':
         return (
           <>
+            <span className="card-category">{categoryName}</span>
             <span className="card-emoji" role="img" aria-label={card.name}>{card.emoji}</span>
-            <span className="card-hint">What bird is this?</span>
+            <span className="card-tap-hint">Tap to reveal</span>
           </>
         );
       case 'colors':
         if (card.hex) {
           return (
             <>
-              <div
-                className="color-circle"
-                style={{ backgroundColor: card.hex }}
-              />
-              <span className="card-hint">What color is this?</span>
+              <span className="card-category">{categoryName}</span>
+              <div className="color-circle" style={{ backgroundColor: card.hex }} />
+              <span className="card-tap-hint">Tap to reveal</span>
             </>
           );
         } else {
           return (
             <>
+              <span className="card-category">{categoryName}</span>
               <span className="card-emoji" role="img" aria-label={card.name}>{card.emoji}</span>
-              <span className="card-hint">What shape is this?</span>
+              <span className="card-tap-hint">Tap to reveal</span>
             </>
           );
         }
       case 'vehicles':
         return (
           <>
+            <span className="card-category">{categoryName}</span>
             <span className="card-emoji" role="img" aria-label={card.name}>{card.emoji}</span>
-            <span className="card-hint">What vehicle is this?</span>
+            <span className="card-tap-hint">Tap to reveal</span>
           </>
         );
       case 'bodyparts':
         return (
           <>
+            <span className="card-category">{categoryName}</span>
             <span className="card-emoji" role="img" aria-label={card.name}>{card.emoji}</span>
-            <span className="card-hint">What body part is this?</span>
+            <span className="card-tap-hint">Tap to reveal</span>
           </>
         );
       case 'weather':
         return (
           <>
+            <span className="card-category">{categoryName}</span>
             <span className="card-emoji" role="img" aria-label={card.name}>{card.emoji}</span>
-            <span className="card-hint">What weather is this?</span>
+            <span className="card-tap-hint">Tap to reveal</span>
           </>
         );
       case 'emotions':
         return (
           <>
+            <span className="card-category">{categoryName}</span>
             <span className="card-emoji" role="img" aria-label={card.name}>{card.emoji}</span>
-            <span className="card-hint">How does this feel?</span>
+            <span className="card-tap-hint">Tap to reveal</span>
           </>
         );
       default:
@@ -233,13 +244,17 @@ function App() {
   );
 
   const renderCardBack = (card) => {
+    const categoryName = getCategoryName();
+
     switch (currentCategory) {
       case 'alphabet':
         return (
           <>
+            <span className="card-category">{categoryName}</span>
             <span className="card-emoji" role="img" aria-label={card.word}>{card.emoji}</span>
             <div className="card-word-row">
               <span className="card-word">{card.word}</span>
+              <span className="card-hint-badge">{card.hint}</span>
               <SpeakButton text={`${card.letter} is for ${card.word}`} type="phrase" />
             </div>
           </>
@@ -247,125 +262,135 @@ function App() {
       case 'numbers':
         return (
           <>
+            <span className="card-category">{categoryName}</span>
             <span className="card-visual">{card.visual}</span>
             <div className="card-word-row">
               <span className="card-word">{card.word}</span>
+              <span className="card-hint-badge">{card.hint}</span>
               <SpeakButton text={card.word} type="number" />
             </div>
-            <span className="card-hint">{card.hint}</span>
           </>
         );
       case 'animals':
         return (
           <>
+            <span className="card-category">{categoryName}</span>
+            <span className="card-emoji" role="img" aria-label={card.name}>{card.emoji}</span>
             <div className="card-word-row">
               <span className="card-word">{card.name}</span>
+              <span className="card-hint-badge">{card.sound}</span>
               <SpeakButton text={card.name} />
             </div>
-            <span className="card-hint">{card.sound}</span>
-            <span className="card-hint">Lives in: {card.habitat}</span>
           </>
         );
       case 'fruits':
         return (
           <>
+            <span className="card-category">{categoryName}</span>
+            <span className="card-emoji" role="img" aria-label={card.name}>{card.emoji}</span>
             <div className="card-word-row">
               <span className="card-word">{card.name}</span>
+              <span className="card-hint-badge">{card.hint}</span>
               <SpeakButton text={card.name} />
             </div>
-            <span className="card-hint">Color: {card.color}</span>
-            <span className="card-hint">{card.hint}</span>
           </>
         );
       case 'vegetables':
         return (
           <>
+            <span className="card-category">{categoryName}</span>
+            <span className="card-emoji" role="img" aria-label={card.name}>{card.emoji}</span>
             <div className="card-word-row">
               <span className="card-word">{card.name}</span>
+              <span className="card-hint-badge">{card.hint}</span>
               <SpeakButton text={card.name} />
             </div>
-            <span className="card-hint">Color: {card.color}</span>
-            <span className="card-hint">{card.hint}</span>
           </>
         );
       case 'birds':
         return (
           <>
+            <span className="card-category">{categoryName}</span>
+            <span className="card-emoji" role="img" aria-label={card.name}>{card.emoji}</span>
             <div className="card-word-row">
               <span className="card-word">{card.name}</span>
+              <span className="card-hint-badge">{card.sound}</span>
               <SpeakButton text={card.name} />
             </div>
-            <span className="card-hint">{card.sound}</span>
-            <span className="card-hint">Lives in: {card.habitat}</span>
           </>
         );
       case 'colors':
         if (card.hex) {
           return (
             <>
+              <span className="card-category">{categoryName}</span>
               <span className="card-emoji" role="img" aria-label={card.name}>{card.emoji}</span>
               <div className="card-word-row">
                 <span className="card-word">{card.name}</span>
+                <span className="card-hint-badge">{card.example}</span>
                 <SpeakButton text={card.name} />
               </div>
-              <span className="card-hint">{card.example}</span>
             </>
           );
         } else {
           return (
             <>
+              <span className="card-category">{categoryName}</span>
+              <span className="card-emoji" role="img" aria-label={card.name}>{card.emoji}</span>
               <div className="card-word-row">
                 <span className="card-word">{card.name}</span>
+                <span className="card-hint-badge">{card.description}</span>
                 <SpeakButton text={card.name} />
               </div>
-              <span className="card-hint">{card.description}</span>
-              {card.sides > 0 && (
-                <span className="card-hint">{card.sides} sides</span>
-              )}
             </>
           );
         }
       case 'vehicles':
         return (
           <>
+            <span className="card-category">{categoryName}</span>
+            <span className="card-emoji" role="img" aria-label={card.name}>{card.emoji}</span>
             <div className="card-word-row">
               <span className="card-word">{card.name}</span>
+              <span className="card-hint-badge">{card.sound}</span>
               <SpeakButton text={card.name} />
             </div>
-            <span className="card-hint">{card.sound}</span>
-            <span className="card-hint">Type: {card.type}</span>
           </>
         );
       case 'bodyparts':
         return (
           <>
+            <span className="card-category">{categoryName}</span>
+            <span className="card-emoji" role="img" aria-label={card.name}>{card.emoji}</span>
             <div className="card-word-row">
               <span className="card-word">{card.name}</span>
+              <span className="card-hint-badge">{card.action}</span>
               <SpeakButton text={card.name} />
             </div>
-            <span className="card-hint">{card.action}</span>
-            <span className="card-hint">We have: {card.count}</span>
           </>
         );
       case 'weather':
         return (
           <>
+            <span className="card-category">{categoryName}</span>
+            <span className="card-emoji" role="img" aria-label={card.name}>{card.emoji}</span>
             <div className="card-word-row">
               <span className="card-word">{card.name}</span>
+              <span className="card-hint-badge">{card.description}</span>
               <SpeakButton text={card.name} />
             </div>
-            <span className="card-hint">{card.description}</span>
-            <span className="card-hint">Feels: {card.temperature}</span>
           </>
         );
       case 'emotions':
         return (
           <>
+            <span className="card-category">{categoryName}</span>
+            <span className="card-emoji" role="img" aria-label={card.name}>{card.emoji}</span>
             <div className="card-word-row">
               <span className="card-word">{card.name}</span>
+              <span className="card-hint-badge">{card.feeling}</span>
               <SpeakButton text={card.name} />
             </div>
-            <span className="card-hint">{card.feeling}</span>
           </>
         );
       default:

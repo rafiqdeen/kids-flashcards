@@ -5,16 +5,14 @@
   animation: cardEntrance 0.5s ease-out backwards;
 }
 
-/* Staggered entrance - set via inline style or nth-child */
+/* Staggered entrance */
 .card-grid-item:nth-child(1) .flashcard-container { animation-delay: 0.05s; }
 .card-grid-item:nth-child(2) .flashcard-container { animation-delay: 0.1s; }
 .card-grid-item:nth-child(3) .flashcard-container { animation-delay: 0.15s; }
 .card-grid-item:nth-child(4) .flashcard-container { animation-delay: 0.2s; }
 .card-grid-item:nth-child(5) .flashcard-container { animation-delay: 0.25s; }
 .card-grid-item:nth-child(6) .flashcard-container { animation-delay: 0.3s; }
-.card-grid-item:nth-child(7) .flashcard-container { animation-delay: 0.35s; }
-.card-grid-item:nth-child(8) .flashcard-container { animation-delay: 0.4s; }
-.card-grid-item:nth-child(n+9) .flashcard-container { animation-delay: 0.45s; }
+.card-grid-item:nth-child(n+7) .flashcard-container { animation-delay: 0.35s; }
 
 @keyframes cardEntrance {
   from {
@@ -29,7 +27,7 @@
 
 .flashcard {
   width: 100%;
-  height: 340px;
+  height: 380px;
   position: relative;
   transform-style: preserve-3d;
   transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease;
@@ -62,8 +60,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: 20px;
+  padding: 24px 20px;
   box-sizing: border-box;
   overflow: hidden;
   /* Glassmorphism base */
@@ -137,7 +134,7 @@
   background: linear-gradient(145deg, #ec4899 0%, #f43f5e 50%, #fb7185 100%);
 }
 
-/* Card type variations - using ::before for gradient overlay */
+/* Card type variations */
 .alphabet .flashcard-front::before {
   background: linear-gradient(145deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
 }
@@ -251,6 +248,7 @@
   box-shadow: 0 20px 40px rgba(234, 179, 8, 0.3), 0 0 60px rgba(245, 158, 11, 0.2);
 }
 
+/* Flip hint */
 .flip-hint {
   text-align: center;
   color: var(--text-muted);
@@ -278,38 +276,41 @@
   }
 }
 
-/* Card content styling */
-.card-image {
-  width: 160px;
-  height: 160px;
-  object-fit: contain;
-  margin-bottom: 16px;
-  filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.25));
+/* Category title at top */
+.card-category {
+  font-size: 13px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.7);
+  text-transform: uppercase;
+  letter-spacing: 1px;
   position: relative;
   z-index: 1;
 }
 
+/* Emoji display */
 .card-emoji {
   font-size: 90px;
-  margin-bottom: 12px;
+  line-height: 1;
+  margin: auto;
   filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.15));
   position: relative;
   z-index: 1;
 }
 
+/* Letter and number display */
 .card-letter,
 .card-number {
   font-size: 100px;
   font-weight: 900;
-  text-shadow:
-    3px 3px 0 rgba(0, 0, 0, 0.15),
-    0 0 30px rgba(255, 255, 255, 0.3);
+  text-shadow: 3px 3px 0 rgba(0, 0, 0, 0.15), 0 0 30px rgba(255, 255, 255, 0.3);
   position: relative;
   z-index: 1;
+  margin: auto;
 }
 
+/* Card name/word */
 .card-word {
-  font-size: 32px;
+  font-size: 28px;
   font-weight: 800;
   text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.1);
   position: relative;
@@ -317,26 +318,57 @@
   text-align: center;
 }
 
+/* Word row with speaker */
 .card-word-row {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 12px;
-  margin-top: 12px;
+  gap: 8px;
+  margin-top: auto;
   position: relative;
   z-index: 1;
 }
 
-.card-word-row .card-word {
-  margin-top: 0;
+/* Hint badge */
+.card-hint-badge {
+  background: rgba(0, 0, 0, 0.25);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  max-width: 90%;
+  text-align: center;
+  backdrop-filter: blur(10px);
 }
 
+/* Simple hint text */
+.card-hint {
+  font-size: 15px;
+  opacity: 0.9;
+  text-align: center;
+  font-weight: 600;
+  position: relative;
+  z-index: 1;
+}
+
+/* Tap hint on front */
+.card-tap-hint {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 600;
+  margin-top: auto;
+  position: relative;
+  z-index: 1;
+}
+
+/* Speaker button */
 .speak-button {
   background: rgba(255, 255, 255, 0.25);
   border: 2px solid rgba(255, 255, 255, 0.4);
   border-radius: 50%;
-  width: 44px;
-  height: 44px;
+  width: 48px;
+  height: 48px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -361,20 +393,22 @@
   height: 22px;
 }
 
-.card-hint {
-  font-size: 15px;
-  opacity: 0.9;
-  margin-top: 6px;
-  text-align: center;
-  font-weight: 600;
+/* Visual stars for numbers */
+.card-visual {
+  font-size: 24px;
+  letter-spacing: 3px;
+  margin: auto;
   position: relative;
   z-index: 1;
 }
 
-.card-visual {
-  font-size: 24px;
-  letter-spacing: 3px;
-  margin-top: 10px;
+/* Color circle */
+.color-circle {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  margin: auto;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   position: relative;
   z-index: 1;
 }
@@ -390,8 +424,7 @@
   animation: none;
 }
 
-/* Bouncy image/emoji on hover */
-.flashcard-container:hover .card-image,
+/* Bouncy emoji on hover */
 .flashcard-container:hover .card-emoji {
   animation: wiggle 0.5s ease-in-out;
 }
@@ -405,12 +438,7 @@
 /* Responsive adjustments */
 @media (max-width: 1100px) {
   .flashcard {
-    height: 320px;
-  }
-
-  .card-image {
-    width: 140px;
-    height: 140px;
+    height: 360px;
   }
 
   .card-emoji {
@@ -423,29 +451,55 @@
   }
 
   .card-word {
-    font-size: 28px;
-  }
-
-  .card-hint {
-    font-size: 13px;
+    font-size: 24px;
   }
 }
 
 @media (max-width: 800px) {
   .flashcard {
-    height: 300px;
+    height: 340px;
     border-radius: 24px;
   }
 
   .flashcard-front,
   .flashcard-back {
-    padding: 16px;
+    padding: 20px 16px;
     border-radius: 24px;
   }
 
-  .card-image {
-    width: 120px;
-    height: 120px;
+  .card-emoji {
+    font-size: 70px;
+  }
+
+  .card-letter,
+  .card-number {
+    font-size: 75px;
+  }
+
+  .card-word {
+    font-size: 22px;
+  }
+
+  .card-category {
+    font-size: 12px;
+  }
+
+  .speak-button {
+    width: 44px;
+    height: 44px;
+  }
+}
+
+@media (max-width: 500px) {
+  .flashcard {
+    height: 320px;
+    border-radius: 20px;
+  }
+
+  .flashcard-front,
+  .flashcard-back {
+    padding: 18px 14px;
+    border-radius: 20px;
   }
 
   .card-emoji {
@@ -458,56 +512,30 @@
   }
 
   .card-word {
-    font-size: 24px;
+    font-size: 20px;
   }
 
-  .card-hint {
+  .card-hint-badge {
     font-size: 12px;
-  }
-}
-
-@media (max-width: 500px) {
-  .flashcard {
-    height: 280px;
-    border-radius: 20px;
-  }
-
-  .flashcard-front,
-  .flashcard-back {
-    padding: 16px;
-    border-radius: 20px;
-  }
-
-  .card-image {
-    width: 110px;
-    height: 110px;
-  }
-
-  .card-emoji {
-    font-size: 70px;
-    margin-bottom: 6px;
-  }
-
-  .card-letter,
-  .card-number {
-    font-size: 80px;
-  }
-
-  .card-word {
-    font-size: 22px;
-  }
-
-  .card-hint {
-    font-size: 13px;
+    padding: 6px 12px;
   }
 
   .card-visual {
-    font-size: 18px;
-    letter-spacing: 2px;
+    font-size: 20px;
+  }
+
+  .speak-button {
+    width: 42px;
+    height: 42px;
+  }
+
+  .speak-button svg {
+    width: 20px;
+    height: 20px;
   }
 }
 
-/* Reduced motion for accessibility */
+/* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
   .flashcard-container,
   .flashcard {
@@ -522,7 +550,7 @@
     transform: rotateY(180deg) translateY(-4px);
   }
 
-  .flashcard-container:hover .card-image {
+  .flashcard-container:hover .card-emoji {
     animation: none;
   }
 
