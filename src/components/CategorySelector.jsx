@@ -91,37 +91,51 @@ const categories = [
   },
 ];
 
-function CategorySelector({ onSelect, progress }) {
+const categoryNames = {
+  alphabet: 'Alphabet',
+  numbers: 'Numbers',
+  animals: 'Animals',
+  fruits: 'Fruits',
+  vegetables: 'Vegetables',
+  birds: 'Birds',
+  colors: 'Colors & Shapes',
+  vehicles: 'Vehicles',
+  bodyparts: 'Body Parts',
+  weather: 'Weather',
+  emotions: 'Emotions',
+};
+
+function CategorySelector({ onSelect, progress, lastCategory }) {
   return (
     <div className="category-selector">
       {/* Hero Section with Floating Cards */}
       <section className="hero-section">
-        {/* Floating preview cards */}
-        <div className="floating-cards">
-          <div className="preview-card preview-card-1" onClick={() => onSelect('alphabet')}>
-            <span className="preview-category">Alphabet</span>
-            <span className="preview-emoji">A</span>
-            <span className="preview-name">Apple</span>
-          </div>
-          <div className="preview-card preview-card-2" onClick={() => onSelect('animals')}>
-            <span className="preview-category">Animals</span>
-            <span className="preview-emoji">🦁</span>
-            <span className="preview-name">Lion</span>
-          </div>
-          <div className="preview-card preview-card-3" onClick={() => onSelect('fruits')}>
-            <span className="preview-category">Fruits</span>
-            <span className="preview-emoji">🍎</span>
-            <span className="preview-name">Apple</span>
-          </div>
-          <div className="preview-card preview-card-4" onClick={() => onSelect('numbers')}>
-            <span className="preview-category">Numbers</span>
-            <span className="preview-emoji">5</span>
-            <span className="preview-name">Five</span>
-          </div>
-        </div>
-
         {/* Hero Content */}
         <div className="hero-content">
+          {/* Floating preview cards - horizontal row */}
+          <div className="floating-cards">
+            <div className="preview-card preview-card-1" onClick={() => onSelect('alphabet')}>
+              <span className="preview-category">Alphabet</span>
+              <span className="preview-emoji">A</span>
+              <span className="preview-name">Apple</span>
+            </div>
+            <div className="preview-card preview-card-2" onClick={() => onSelect('animals')}>
+              <span className="preview-category">Animals</span>
+              <span className="preview-emoji">🐘</span>
+              <span className="preview-name">Elephant</span>
+            </div>
+            <div className="preview-card preview-card-3" onClick={() => onSelect('fruits')}>
+              <span className="preview-category">Fruits</span>
+              <span className="preview-emoji">🍎</span>
+              <span className="preview-name">Apple</span>
+            </div>
+            <div className="preview-card preview-card-4" onClick={() => onSelect('numbers')}>
+              <span className="preview-category">Numbers</span>
+              <span className="preview-emoji">5</span>
+              <span className="preview-name">Five</span>
+            </div>
+          </div>
+
           <div className="hero-badge">Learning is Fun!</div>
           <h1 className="app-title">
             <span className="title-kids">Kids</span>
@@ -134,15 +148,28 @@ function CategorySelector({ onSelect, progress }) {
             <br />
             Tap to flip and discover!
           </p>
-          <button
-            className="hero-cta"
-            onClick={() => document.getElementById('categories').scrollIntoView({ behavior: 'smooth' })}
-          >
-            Start Learning
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </button>
+          <div className="hero-buttons">
+            {lastCategory && (
+              <button
+                className="hero-continue"
+                onClick={() => onSelect(lastCategory)}
+              >
+                Continue: {categoryNames[lastCategory]}
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                  <path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </button>
+            )}
+            <button
+              className="hero-cta"
+              onClick={() => document.getElementById('categories').scrollIntoView({ behavior: 'smooth' })}
+            >
+              {lastCategory ? 'Browse Categories' : 'Start Learning'}
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                <path d="M12 5v14M5 12l7 7 7-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+          </div>
           <p className="hero-stat">11 Categories with 200+ Flash Cards</p>
         </div>
 
@@ -203,7 +230,7 @@ function CategorySelector({ onSelect, progress }) {
                       </div>
                     </div>
                   ) : (
-                    <div className="start-badge">Start Learning</div>
+                    <div className="start-badge">{totalCards} cards to learn</div>
                   )}
                 </div>
                 <div className="card-arrow">
@@ -219,6 +246,7 @@ function CategorySelector({ onSelect, progress }) {
 
       <footer className="app-footer">
         <p>Made with ❤️ for curious little minds</p>
+        <p className="attribution">Animal icons by <a href="https://icons8.com" target="_blank" rel="noopener noreferrer">Icons8</a></p>
       </footer>
     </div>
   );

@@ -20,6 +20,7 @@ function CardDeck({
   const [streak, setStreak] = useState(0);
   const [showStreakCelebration, setShowStreakCelebration] = useState(false);
   const [starBurst, setStarBurst] = useState(false);
+  const [hasFlippedCurrent, setHasFlippedCurrent] = useState(false);
 
   const createConfetti = useCallback((x, y) => {
     const colors = ['#f43f5e', '#fbbf24', '#22c55e', '#3b82f6', '#a855f7', '#ec4899'];
@@ -47,6 +48,7 @@ function CardDeck({
     if (currentIndex < cards.length - 1) {
       setDirection('next');
       setCurrentIndex(currentIndex + 1);
+      setHasFlippedCurrent(false);
       playSound?.('click');
     }
   };
@@ -55,6 +57,7 @@ function CardDeck({
     if (currentIndex > 0) {
       setDirection('prev');
       setCurrentIndex(currentIndex - 1);
+      setHasFlippedCurrent(false);
       playSound?.('click');
     }
   };
@@ -63,12 +66,14 @@ function CardDeck({
     if (index !== currentIndex && index >= 0 && index < cards.length) {
       setDirection(index > currentIndex ? 'next' : 'prev');
       setCurrentIndex(index);
+      setHasFlippedCurrent(false);
       playSound?.('click');
     }
   };
 
   const handleFlip = (card, isFlipped) => {
     if (isFlipped) {
+      setHasFlippedCurrent(true);
       playSound?.('flip');
       onCardViewed?.(card.id);
     }
@@ -191,19 +196,13 @@ function CardDeck({
         </div>
 
         <button className="header-btn quiz-btn" onClick={onStartQuiz}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-            <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/>
+            <path d="M9 9a3 3 0 115.12 2.12c-.58.59-1.12 1.3-1.12 2.38v.5M12 17h.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
+          <span>Quiz</span>
         </button>
       </header>
-
-      {/* Streak Counter */}
-      {streak > 0 && (
-        <div className={`streak-counter ${streak >= 5 ? 'hot' : ''} ${streak >= 10 ? 'fire' : ''}`}>
-          <span className="streak-flame">🔥</span>
-          <span className="streak-count">{streak}</span>
-        </div>
-      )}
 
       {/* Main Card Area */}
       <main
@@ -217,9 +216,17 @@ function CardDeck({
           {currentIndex > 0 && (
             <div className="side-card side-card-prev" onClick={goPrev}>
               <div className="side-card-content">
-                <span className="side-card-label">
-                  {cards[currentIndex - 1].letter || cards[currentIndex - 1].number || cards[currentIndex - 1].emoji}
-                </span>
+                {cards[currentIndex - 1].letter ? (
+                  <span className="side-card-label">
+                    {cards[currentIndex - 1].letter}
+                  </span>
+                ) : cards[currentIndex - 1].image ? (
+                  <img className="side-card-image" src={cards[currentIndex - 1].image} alt="" />
+                ) : (
+                  <span className="side-card-label">
+                    {cards[currentIndex - 1].number || cards[currentIndex - 1].emoji}
+                  </span>
+                )}
               </div>
             </div>
           )}
@@ -262,9 +269,17 @@ function CardDeck({
           {currentIndex < cards.length - 1 && (
             <div className="side-card side-card-next" onClick={goNext}>
               <div className="side-card-content">
-                <span className="side-card-label">
-                  {cards[currentIndex + 1].letter || cards[currentIndex + 1].number || cards[currentIndex + 1].emoji}
-                </span>
+                {cards[currentIndex + 1].letter ? (
+                  <span className="side-card-label">
+                    {cards[currentIndex + 1].letter}
+                  </span>
+                ) : cards[currentIndex + 1].image ? (
+                  <img className="side-card-image" src={cards[currentIndex + 1].image} alt="" />
+                ) : (
+                  <span className="side-card-label">
+                    {cards[currentIndex + 1].number || cards[currentIndex + 1].emoji}
+                  </span>
+                )}
               </div>
             </div>
           )}
@@ -280,8 +295,18 @@ function CardDeck({
           <span className="position-total">{cards.length}</span>
         </div>
 
-        {/* Mastered Button */}
-        <div className="mastered-btn-wrapper">
+        {/* Streak + Mastered Row */}
+        <div className="footer-actions">
+          {/* Streak Counter */}
+          {streak > 0 && (
+            <div className={`streak-counter ${streak >= 5 ? 'hot' : ''} ${streak >= 10 ? 'fire' : ''}`}>
+              <span className="streak-flame">🔥</span>
+              <span className="streak-count">{streak}</span>
+            </div>
+          )}
+
+          {/* Mastered Button */}
+          <div className="mastered-btn-wrapper">
           {/* Star Burst Effect */}
           {starBurst && (
             <div className="star-burst">
@@ -291,9 +316,9 @@ function CardDeck({
             </div>
           )}
           <button
-            className={`mastered-btn ${isMastered ? 'is-mastered' : ''} ${starBurst ? 'burst' : ''}`}
+            className={`mastered-btn ${isMastered ? 'is-mastered' : ''} ${starBurst ? 'burst' : ''} ${!hasFlippedCurrent && !isMastered ? 'not-ready' : ''}`}
             onClick={(e) => handleMastered(currentCard, e)}
-            disabled={isMastered}
+            disabled={isMastered || !hasFlippedCurrent}
           >
             {isMastered ? (
               <>
@@ -312,6 +337,7 @@ function CardDeck({
             )}
           </button>
         </div>
+        </div>
 
         {/* Thumbnail Strip */}
         <div className="thumbnail-strip">
@@ -321,9 +347,15 @@ function CardDeck({
               className={`thumbnail ${index === currentIndex ? 'active' : ''} ${progress?.mastered?.includes(card.id) ? 'mastered' : ''}`}
               onClick={() => goToCard(index)}
             >
-              <span className="thumbnail-content">
-                {card.letter || card.number || card.emoji || (index + 1)}
-              </span>
+              {card.letter ? (
+                <span className="thumbnail-content">{card.letter}</span>
+              ) : card.image ? (
+                <img className="thumbnail-image" src={card.image} alt="" />
+              ) : (
+                <span className="thumbnail-content">
+                  {card.number || card.emoji || (index + 1)}
+                </span>
+              )}
             </button>
           ))}
         </div>

@@ -21,7 +21,7 @@ import './App.css';
 function App() {
   const [currentView, setCurrentView] = useState('home'); // home, cards, quiz
   const [currentCategory, setCurrentCategory] = useState(null);
-  const { progress, markViewed, markMastered, getCategoryProgress } = useProgress();
+  const { progress, lastCategory, markViewed, markMastered, getCategoryProgress } = useProgress();
   const { playSound } = useSound();
   const { speakWord, speakLetter, speakNumber, speakPhrase } = useSpeech();
 
@@ -145,7 +145,11 @@ function App() {
         return (
           <>
             <span className="card-category">{categoryName}</span>
-            <span className="card-emoji" role="img" aria-label={card.name}>{card.emoji}</span>
+            {card.image ? (
+              <img className="card-image" src={card.image} alt={card.name} />
+            ) : (
+              <span className="card-emoji" role="img" aria-label={card.name}>{card.emoji}</span>
+            )}
             <span className="card-tap-hint">Tap to reveal</span>
           </>
         );
@@ -153,7 +157,11 @@ function App() {
         return (
           <>
             <span className="card-category">{categoryName}</span>
-            <span className="card-emoji" role="img" aria-label={card.name}>{card.emoji}</span>
+            {card.image ? (
+              <img className="card-image" src={card.image} alt={card.name} />
+            ) : (
+              <span className="card-emoji" role="img" aria-label={card.name}>{card.emoji}</span>
+            )}
             <span className="card-tap-hint">Tap to reveal</span>
           </>
         );
@@ -161,7 +169,11 @@ function App() {
         return (
           <>
             <span className="card-category">{categoryName}</span>
-            <span className="card-emoji" role="img" aria-label={card.name}>{card.emoji}</span>
+            {card.image ? (
+              <img className="card-image" src={card.image} alt={card.name} />
+            ) : (
+              <span className="card-emoji" role="img" aria-label={card.name}>{card.emoji}</span>
+            )}
             <span className="card-tap-hint">Tap to reveal</span>
           </>
         );
@@ -169,7 +181,11 @@ function App() {
         return (
           <>
             <span className="card-category">{categoryName}</span>
-            <span className="card-emoji" role="img" aria-label={card.name}>{card.emoji}</span>
+            {card.image ? (
+              <img className="card-image" src={card.image} alt={card.name} />
+            ) : (
+              <span className="card-emoji" role="img" aria-label={card.name}>{card.emoji}</span>
+            )}
             <span className="card-tap-hint">Tap to reveal</span>
           </>
         );
@@ -195,7 +211,11 @@ function App() {
         return (
           <>
             <span className="card-category">{categoryName}</span>
-            <span className="card-emoji" role="img" aria-label={card.name}>{card.emoji}</span>
+            {card.image ? (
+              <img className="card-image" src={card.image} alt={card.name} />
+            ) : (
+              <span className="card-emoji" role="img" aria-label={card.name}>{card.emoji}</span>
+            )}
             <span className="card-tap-hint">Tap to reveal</span>
           </>
         );
@@ -203,7 +223,11 @@ function App() {
         return (
           <>
             <span className="card-category">{categoryName}</span>
-            <span className="card-emoji" role="img" aria-label={card.name}>{card.emoji}</span>
+            {card.image ? (
+              <img className="card-image" src={card.image} alt={card.name} />
+            ) : (
+              <span className="card-emoji" role="img" aria-label={card.name}>{card.emoji}</span>
+            )}
             <span className="card-tap-hint">Tap to reveal</span>
           </>
         );
@@ -211,7 +235,11 @@ function App() {
         return (
           <>
             <span className="card-category">{categoryName}</span>
-            <span className="card-emoji" role="img" aria-label={card.name}>{card.emoji}</span>
+            {card.image ? (
+              <img className="card-image" src={card.image} alt={card.name} />
+            ) : (
+              <span className="card-emoji" role="img" aria-label={card.name}>{card.emoji}</span>
+            )}
             <span className="card-tap-hint">Tap to reveal</span>
           </>
         );
@@ -219,7 +247,11 @@ function App() {
         return (
           <>
             <span className="card-category">{categoryName}</span>
-            <span className="card-emoji" role="img" aria-label={card.name}>{card.emoji}</span>
+            {card.image ? (
+              <img className="card-image" src={card.image} alt={card.name} />
+            ) : (
+              <span className="card-emoji" role="img" aria-label={card.name}>{card.emoji}</span>
+            )}
             <span className="card-tap-hint">Tap to reveal</span>
           </>
         );
@@ -251,7 +283,11 @@ function App() {
         return (
           <>
             <span className="card-category">{categoryName}</span>
-            <span className="card-emoji" role="img" aria-label={card.word}>{card.emoji}</span>
+            {card.image ? (
+              <img className="card-image" src={card.image} alt={card.word} />
+            ) : (
+              <span className="card-emoji" role="img" aria-label={card.word}>{card.emoji}</span>
+            )}
             <div className="card-word-row">
               <span className="card-word">{card.word}</span>
               <span className="card-hint-badge">{card.hint}</span>
@@ -275,7 +311,11 @@ function App() {
         return (
           <>
             <span className="card-category">{categoryName}</span>
-            <span className="card-emoji" role="img" aria-label={card.name}>{card.emoji}</span>
+            {card.image ? (
+              <img className="card-image" src={card.image} alt={card.name} />
+            ) : (
+              <span className="card-emoji" role="img" aria-label={card.name}>{card.emoji}</span>
+            )}
             <div className="card-word-row">
               <span className="card-word">{card.name}</span>
               <span className="card-hint-badge">{card.sound}</span>
@@ -287,7 +327,11 @@ function App() {
         return (
           <>
             <span className="card-category">{categoryName}</span>
-            <span className="card-emoji" role="img" aria-label={card.name}>{card.emoji}</span>
+            {card.image ? (
+              <img className="card-image" src={card.image} alt={card.name} />
+            ) : (
+              <span className="card-emoji" role="img" aria-label={card.name}>{card.emoji}</span>
+            )}
             <div className="card-word-row">
               <span className="card-word">{card.name}</span>
               <span className="card-hint-badge">{card.hint}</span>
@@ -299,7 +343,11 @@ function App() {
         return (
           <>
             <span className="card-category">{categoryName}</span>
-            <span className="card-emoji" role="img" aria-label={card.name}>{card.emoji}</span>
+            {card.image ? (
+              <img className="card-image" src={card.image} alt={card.name} />
+            ) : (
+              <span className="card-emoji" role="img" aria-label={card.name}>{card.emoji}</span>
+            )}
             <div className="card-word-row">
               <span className="card-word">{card.name}</span>
               <span className="card-hint-badge">{card.hint}</span>
@@ -311,7 +359,11 @@ function App() {
         return (
           <>
             <span className="card-category">{categoryName}</span>
-            <span className="card-emoji" role="img" aria-label={card.name}>{card.emoji}</span>
+            {card.image ? (
+              <img className="card-image" src={card.image} alt={card.name} />
+            ) : (
+              <span className="card-emoji" role="img" aria-label={card.name}>{card.emoji}</span>
+            )}
             <div className="card-word-row">
               <span className="card-word">{card.name}</span>
               <span className="card-hint-badge">{card.sound}</span>
@@ -349,7 +401,11 @@ function App() {
         return (
           <>
             <span className="card-category">{categoryName}</span>
-            <span className="card-emoji" role="img" aria-label={card.name}>{card.emoji}</span>
+            {card.image ? (
+              <img className="card-image" src={card.image} alt={card.name} />
+            ) : (
+              <span className="card-emoji" role="img" aria-label={card.name}>{card.emoji}</span>
+            )}
             <div className="card-word-row">
               <span className="card-word">{card.name}</span>
               <span className="card-hint-badge">{card.sound}</span>
@@ -361,7 +417,11 @@ function App() {
         return (
           <>
             <span className="card-category">{categoryName}</span>
-            <span className="card-emoji" role="img" aria-label={card.name}>{card.emoji}</span>
+            {card.image ? (
+              <img className="card-image" src={card.image} alt={card.name} />
+            ) : (
+              <span className="card-emoji" role="img" aria-label={card.name}>{card.emoji}</span>
+            )}
             <div className="card-word-row">
               <span className="card-word">{card.name}</span>
               <span className="card-hint-badge">{card.action}</span>
@@ -373,7 +433,11 @@ function App() {
         return (
           <>
             <span className="card-category">{categoryName}</span>
-            <span className="card-emoji" role="img" aria-label={card.name}>{card.emoji}</span>
+            {card.image ? (
+              <img className="card-image" src={card.image} alt={card.name} />
+            ) : (
+              <span className="card-emoji" role="img" aria-label={card.name}>{card.emoji}</span>
+            )}
             <div className="card-word-row">
               <span className="card-word">{card.name}</span>
               <span className="card-hint-badge">{card.description}</span>
@@ -385,7 +449,11 @@ function App() {
         return (
           <>
             <span className="card-category">{categoryName}</span>
-            <span className="card-emoji" role="img" aria-label={card.name}>{card.emoji}</span>
+            {card.image ? (
+              <img className="card-image" src={card.image} alt={card.name} />
+            ) : (
+              <span className="card-emoji" role="img" aria-label={card.name}>{card.emoji}</span>
+            )}
             <div className="card-word-row">
               <span className="card-word">{card.name}</span>
               <span className="card-hint-badge">{card.feeling}</span>
@@ -424,6 +492,7 @@ function App() {
       <CategorySelector
         onSelect={handleSelectCategory}
         progress={progress}
+        lastCategory={lastCategory}
       />
     );
   }

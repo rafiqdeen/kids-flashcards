@@ -24,10 +24,14 @@ export function useProgress() {
     setProgress((prev) => {
       const categoryProgress = prev[category] || { viewed: [], mastered: [] };
       if (categoryProgress.viewed.includes(cardId)) {
-        return prev;
+        return {
+          ...prev,
+          lastCategory: category, // Track last category
+        };
       }
       return {
         ...prev,
+        lastCategory: category, // Track last category
         [category]: {
           ...categoryProgress,
           viewed: [...categoryProgress.viewed, cardId],
@@ -76,6 +80,7 @@ export function useProgress() {
 
   return {
     progress,
+    lastCategory: progress.lastCategory,
     markViewed,
     markMastered,
     getCategoryProgress,

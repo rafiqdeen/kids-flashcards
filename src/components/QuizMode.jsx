@@ -7,6 +7,8 @@ function QuizMode({ cards, category, onBack, playSound, getDisplayValue }) {
   const [selectedAnswer, setSelectedAnswer] = useState(null);
   const [showResult, setShowResult] = useState(false);
   const [quizComplete, setQuizComplete] = useState(false);
+  const [mistakes, setMistakes] = useState([]);
+  const [showMistakes, setShowMistakes] = useState(false);
 
   // Generate quiz questions
   const questions = useMemo(() => {
@@ -35,6 +37,10 @@ function QuizMode({ cards, category, onBack, playSound, getDisplayValue }) {
 
   useEffect(() => {
     if (selectedAnswer !== null) {
+      // Faster feedback for correct answers, more time for wrong answers to see the correct one
+      const isCorrect = selectedAnswer === currentQuestion?.correctId;
+      const delay = isCorrect ? 800 : 1500;
+
       const timer = setTimeout(() => {
         if (currentQuestionIndex < questions.length - 1) {
           setCurrentQuestionIndex(currentQuestionIndex + 1);
@@ -44,10 +50,10 @@ function QuizMode({ cards, category, onBack, playSound, getDisplayValue }) {
           setQuizComplete(true);
           playSound?.('celebrate');
         }
-      }, 1500);
+      }, delay);
       return () => clearTimeout(timer);
     }
-  }, [selectedAnswer, currentQuestionIndex, questions.length, playSound]);
+  }, [selectedAnswer, currentQuestionIndex, questions.length, playSound, currentQuestion?.correctId]);
 
   const handleAnswer = (option) => {
     if (selectedAnswer !== null) return;
@@ -59,6 +65,15 @@ function QuizMode({ cards, category, onBack, playSound, getDisplayValue }) {
       setScore(score + 1);
       playSound?.('success');
     } else {
+      // Track the mistake for review
+      setMistakes((prev) => [
+        ...prev,
+        {
+          question: currentQuestion.card,
+          selectedAnswer: option,
+          correctAnswer: currentQuestion.card,
+        },
+      ]);
       playSound?.('error');
     }
   };
@@ -69,6 +84,8 @@ function QuizMode({ cards, category, onBack, playSound, getDisplayValue }) {
     setSelectedAnswer(null);
     setShowResult(false);
     setQuizComplete(false);
+    setMistakes([]);
+    setShowMistakes(false);
     playSound?.('click');
   };
 
@@ -89,6 +106,48 @@ function QuizMode({ cards, category, onBack, playSound, getDisplayValue }) {
         </div>
         <p className="score-percentage">{percentage}% correct</p>
         <p className="score-message">{message}</p>
+
+        {mistakes.length > 0 && (
+          <div className="mistakes-section">
+            <button
+              className="review-mistakes-btn"
+              onClick={() => setShowMistakes(!showMistakes)}
+            >
+              {showMistakes ? '▲ Hide' : '▼ Review'} {mistakes.length} Mistake{mistakes.length !== 1 ? 's' : ''}
+            </button>
+
+            {showMistakes && (
+              <div className="mistakes-list">
+                {mistakes.map((mistake, index) => (
+                  <div key={index} className="mistake-item">
+                    <div className="mistake-question">
+                      {mistake.question.image ? (
+                        <img className="mistake-image" src={mistake.question.image} alt={mistake.question.name || 'mistake'} />
+                      ) : mistake.question.emoji ? (
+                        <span className="mistake-emoji">{mistake.question.emoji}</span>
+                      ) : mistake.question.hex ? (
+                        <div className="mistake-color" style={{ backgroundColor: mistake.question.hex }} />
+                      ) : (
+                        <span className="mistake-symbol">{mistake.question.number || mistake.question.letter}</span>
+                      )}
+                    </div>
+                    <div className="mistake-answers">
+                      <div className="mistake-wrong">
+                        <span className="mistake-label">You said:</span>
+                        <span className="mistake-value">{getDisplayValue(mistake.selectedAnswer)}</span>
+                      </div>
+                      <div className="mistake-correct">
+                        <span className="mistake-label">Correct:</span>
+                        <span className="mistake-value">{getDisplayValue(mistake.correctAnswer)}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         <div className="quiz-complete-buttons">
           <button className="restart-button" onClick={handleRestart}>
             🔄 Try Again
@@ -125,15 +184,21 @@ function QuizMode({ cards, category, onBack, playSound, getDisplayValue }) {
       </p>
 
       <div className="quiz-question">
-        {currentQuestion.card.emoji ? (
-          <span className="question-emoji" role="img" aria-label="quiz">{currentQuestion.card.emoji}</span>
-        ) : currentQuestion.card.hex ? (
-          <div className="question-color" style={{ backgroundColor: currentQuestion.card.hex }} />
-        ) : currentQuestion.card.visual ? (
-          <span className="question-visual">{currentQuestion.card.visual}</span>
-        ) : (
-          <span className="question-number">{currentQuestion.card.number || currentQuestion.card.letter}</span>
-        )}
+        {(() => {
+          if (currentQuestion.card.image) {
+            return (
+              <img className="question-image" src={currentQuestion.card.image} alt="quiz" />
+            );
+          } else if (currentQuestion.card.emoji) {
+            return <span className="question-emoji" role="img" aria-label="quiz">{currentQuestion.card.emoji}</span>;
+          } else if (currentQuestion.card.hex) {
+            return <div className="question-color" style={{ backgroundColor: currentQuestion.card.hex }} />;
+          } else if (currentQuestion.card.visual) {
+            return <span className="question-visual">{currentQuestion.card.visual}</span>;
+          } else {
+            return <span className="question-number">{currentQuestion.card.number || currentQuestion.card.letter}</span>;
+          }
+        })()}
         <p className="question-text">What is this?</p>
       </div>
 
