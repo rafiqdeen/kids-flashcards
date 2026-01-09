@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import CategorySelector from './components/CategorySelector';
 import CardDeck from './components/CardDeck';
 import QuizMode from './components/QuizMode';
+import ShapeSVG from './components/ShapeSVG';
 import { useProgress } from './hooks/useProgress';
 import { useSound } from './hooks/useSound';
 import { useSpeech } from './hooks/useSpeech';
@@ -11,7 +12,8 @@ import { animals } from './data/animals';
 import { fruits } from './data/fruits';
 import { vegetables } from './data/vegetables';
 import { birds } from './data/birds';
-import { colorsShapes } from './data/colorsShapes';
+import { colors } from './data/colorsShapes';
+import { shapes } from './data/shapes';
 import { vehicles } from './data/vehicles';
 import { bodyParts } from './data/bodyParts';
 import { weather } from './data/weather';
@@ -21,9 +23,17 @@ import './App.css';
 function App() {
   const [currentView, setCurrentView] = useState('home'); // home, cards, quiz
   const [currentCategory, setCurrentCategory] = useState(null);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [transitionDirection, setTransitionDirection] = useState('enter'); // enter, exit
   const { progress, lastCategory, markViewed, markMastered, getCategoryProgress } = useProgress();
   const { playSound } = useSound();
   const { speakWord, speakLetter, speakNumber, speakPhrase } = useSpeech();
+
+  // Handle page transition class
+  const getTransitionClass = () => {
+    if (!isTransitioning) return 'page-transition-enter-active';
+    return transitionDirection === 'enter' ? 'page-transition-enter' : 'page-transition-exit';
+  };
 
   const handleSpeak = (text, type = 'word') => {
     switch (type) {
@@ -41,25 +51,48 @@ function App() {
     }
   };
 
+  // Smooth view transition helper
+  const transitionToView = (newView, callback) => {
+    setIsTransitioning(true);
+    setTransitionDirection('exit');
+
+    setTimeout(() => {
+      callback?.();
+      setTransitionDirection('enter');
+
+      setTimeout(() => {
+        setIsTransitioning(false);
+      }, 50);
+    }, 200);
+  };
+
   const handleSelectCategory = (categoryId) => {
-    setCurrentCategory(categoryId);
-    setCurrentView('cards');
+    transitionToView('cards', () => {
+      setCurrentCategory(categoryId);
+      setCurrentView('cards');
+    });
     playSound('click');
   };
 
   const handleBackToHome = () => {
-    setCurrentView('home');
-    setCurrentCategory(null);
+    transitionToView('home', () => {
+      setCurrentView('home');
+      setCurrentCategory(null);
+    });
     playSound('click');
   };
 
   const handleStartQuiz = () => {
-    setCurrentView('quiz');
+    transitionToView('quiz', () => {
+      setCurrentView('quiz');
+    });
     playSound('click');
   };
 
   const handleBackToCards = () => {
-    setCurrentView('cards');
+    transitionToView('cards', () => {
+      setCurrentView('cards');
+    });
     playSound('click');
   };
 
@@ -78,7 +111,9 @@ function App() {
       case 'birds':
         return birds;
       case 'colors':
-        return colorsShapes;
+        return colors;
+      case 'shapes':
+        return shapes;
       case 'vehicles':
         return vehicles;
       case 'bodyparts':
@@ -107,7 +142,9 @@ function App() {
       case 'birds':
         return 'Birds';
       case 'colors':
-        return 'Colors & Shapes';
+        return 'Colors';
+      case 'shapes':
+        return 'Shapes';
       case 'vehicles':
         return 'Vehicles';
       case 'bodyparts':
@@ -190,23 +227,21 @@ function App() {
           </>
         );
       case 'colors':
-        if (card.hex) {
-          return (
-            <>
-              <span className="card-category">{categoryName}</span>
-              <div className="color-circle" style={{ backgroundColor: card.hex }} />
-              <span className="card-tap-hint">Tap to reveal</span>
-            </>
-          );
-        } else {
-          return (
-            <>
-              <span className="card-category">{categoryName}</span>
-              <span className="card-emoji" role="img" aria-label={card.name}>{card.emoji}</span>
-              <span className="card-tap-hint">Tap to reveal</span>
-            </>
-          );
-        }
+        return (
+          <>
+            <span className="card-category">{categoryName}</span>
+            <div className="color-circle" style={{ backgroundColor: card.hex }} />
+            <span className="card-tap-hint">Tap to reveal</span>
+          </>
+        );
+      case 'shapes':
+        return (
+          <>
+            <span className="card-category">{categoryName}</span>
+            <ShapeSVG shapeId={card.id} className="card-shape-svg" />
+            <span className="card-tap-hint">Tap to reveal</span>
+          </>
+        );
       case 'vehicles':
         return (
           <>
@@ -372,31 +407,29 @@ function App() {
           </>
         );
       case 'colors':
-        if (card.hex) {
-          return (
-            <>
-              <span className="card-category">{categoryName}</span>
-              <span className="card-emoji" role="img" aria-label={card.name}>{card.emoji}</span>
-              <div className="card-word-row">
-                <span className="card-word">{card.name}</span>
-                <span className="card-hint-badge">{card.example}</span>
-                <SpeakButton text={card.name} />
-              </div>
-            </>
-          );
-        } else {
-          return (
-            <>
-              <span className="card-category">{categoryName}</span>
-              <span className="card-emoji" role="img" aria-label={card.name}>{card.emoji}</span>
-              <div className="card-word-row">
-                <span className="card-word">{card.name}</span>
-                <span className="card-hint-badge">{card.description}</span>
-                <SpeakButton text={card.name} />
-              </div>
-            </>
-          );
-        }
+        return (
+          <>
+            <span className="card-category">{categoryName}</span>
+            <span className="card-emoji" role="img" aria-label={card.name}>{card.emoji}</span>
+            <div className="card-word-row">
+              <span className="card-word">{card.name}</span>
+              <span className="card-hint-badge">{card.example}</span>
+              <SpeakButton text={card.name} />
+            </div>
+          </>
+        );
+      case 'shapes':
+        return (
+          <>
+            <span className="card-category">{categoryName}</span>
+            <ShapeSVG shapeId={card.id} className="card-shape-svg card-shape-svg-back" />
+            <div className="card-word-row">
+              <span className="card-word">{card.name}</span>
+              <span className="card-hint-badge">{card.sides > 0 ? `${card.sides} sides` : card.description}</span>
+              <SpeakButton text={card.name} />
+            </div>
+          </>
+        );
       case 'vehicles':
         return (
           <>
@@ -477,6 +510,7 @@ function App() {
       case 'vegetables':
       case 'birds':
       case 'colors':
+      case 'shapes':
       case 'vehicles':
       case 'bodyparts':
       case 'weather':
@@ -489,39 +523,45 @@ function App() {
 
   if (currentView === 'home') {
     return (
-      <CategorySelector
-        onSelect={handleSelectCategory}
-        progress={progress}
-        lastCategory={lastCategory}
-      />
+      <div className={getTransitionClass()}>
+        <CategorySelector
+          onSelect={handleSelectCategory}
+          progress={progress}
+          lastCategory={lastCategory}
+        />
+      </div>
     );
   }
 
   if (currentView === 'quiz') {
     return (
-      <QuizMode
-        cards={getCategoryData()}
-        category={getCategoryName()}
-        onBack={handleBackToCards}
-        playSound={playSound}
-        getDisplayValue={getQuizDisplayValue}
-      />
+      <div className={getTransitionClass()}>
+        <QuizMode
+          cards={getCategoryData()}
+          category={getCategoryName()}
+          onBack={handleBackToCards}
+          playSound={playSound}
+          getDisplayValue={getQuizDisplayValue}
+        />
+      </div>
     );
   }
 
   return (
-    <CardDeck
-      cards={getCategoryData()}
-      category={getCategoryName()}
-      renderFront={renderCardFront}
-      renderBack={renderCardBack}
-      onBack={handleBackToHome}
-      onStartQuiz={handleStartQuiz}
-      progress={getCategoryProgress(currentCategory)}
-      onCardViewed={(cardId) => markViewed(currentCategory, cardId)}
-      onCardMastered={(cardId) => markMastered(currentCategory, cardId)}
-      playSound={playSound}
-    />
+    <div className={getTransitionClass()}>
+      <CardDeck
+        cards={getCategoryData()}
+        category={getCategoryName()}
+        renderFront={renderCardFront}
+        renderBack={renderCardBack}
+        onBack={handleBackToHome}
+        onStartQuiz={handleStartQuiz}
+        progress={getCategoryProgress(currentCategory)}
+        onCardViewed={(cardId) => markViewed(currentCategory, cardId)}
+        onCardMastered={(cardId) => markMastered(currentCategory, cardId)}
+        playSound={playSound}
+      />
+    </div>
   );
 }
 

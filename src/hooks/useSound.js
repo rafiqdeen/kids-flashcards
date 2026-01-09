@@ -93,6 +93,42 @@ export function useSound() {
         playTone(500, 0.05, 'sine', 0.1);
         break;
 
+      case 'pop':
+        // Bubbly pop sound
+        playTone(800, 0.08, 'sine', 0.2);
+        setTimeout(() => playTone(1000, 0.06, 'sine', 0.15), 50);
+        break;
+
+      case 'whoosh':
+        // Swoosh transition sound
+        for (let i = 0; i < 8; i++) {
+          setTimeout(() => {
+            playTone(200 + i * 100, 0.03, 'sine', 0.08 - i * 0.008);
+          }, i * 15);
+        }
+        break;
+
+      case 'ding':
+        // Bell-like notification
+        playTone(880, 0.3, 'sine', 0.15);
+        playTone(1108, 0.3, 'sine', 0.1);
+        break;
+
+      case 'bounce':
+        // Bouncy playful sound
+        playTone(400, 0.1, 'sine', 0.15);
+        setTimeout(() => playTone(600, 0.08, 'sine', 0.12), 80);
+        setTimeout(() => playTone(500, 0.12, 'sine', 0.1), 150);
+        break;
+
+      case 'streak':
+        // Streak achievement sound
+        const streakNotes = [440, 554, 659, 880];
+        streakNotes.forEach((freq, i) => {
+          setTimeout(() => playTone(freq, 0.15, 'sine', 0.18), i * 80);
+        });
+        break;
+
       default:
         break;
     }

@@ -46,7 +46,7 @@ export const animals = [
   // Water & Pond
   { id: 'frog', name: 'Frog', emoji: '🐸', sound: 'Ribbit!', habitat: 'Pond', image: 'https://live.staticflickr.com/65535/54572848448_fa5e0eecef_z.jpg' },
   { id: 'turtle', name: 'Turtle', emoji: '🐢', sound: 'Slow!', habitat: 'Pond', image: 'https://images.unsplash.com/photo-1437622368342-7a3d73a34c8f?w=400&h=400&fit=crop' },
-  { id: 'crocodile', name: 'Crocodile', emoji: '🐊', sound: 'Snap!', habitat: 'Swamp', image: 'https://loremflickr.com/cache/resized/65535_54029839811_fd3760d69b_z_400_400_nofilter.jpg' },
+  { id: 'crocodile', name: 'Crocodile', emoji: '🐊', sound: 'Snap!', habitat: 'Swamp', image: 'https://images.unsplash.com/photo-1614973463325-c3763683bd9c?w=400&h=400&fit=crop' },
 
   // Ocean Animals
   { id: 'whale', name: 'Whale', emoji: '🐋', sound: 'Song!', habitat: 'Ocean', image: 'https://images.unsplash.com/photo-1568430462989-44163eb1752f?w=400&h=400&fit=crop' },

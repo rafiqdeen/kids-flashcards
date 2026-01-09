@@ -1,3 +1,4 @@
+import { useTheme } from '../hooks/useTheme';
 import './CategorySelector.css';
 
 const categories = [
@@ -51,11 +52,19 @@ const categories = [
   },
   {
     id: 'colors',
-    name: 'Colors & Shapes',
-    description: 'Discover colors and shapes',
+    name: 'Colors',
+    description: 'Discover beautiful colors',
     color: '#a855f7',
     gradient: 'linear-gradient(135deg, #a855f7 0%, #ec4899 100%)',
     icon: ColorsIcon,
+  },
+  {
+    id: 'shapes',
+    name: 'Shapes',
+    description: 'Learn geometric shapes',
+    color: '#8b5cf6',
+    gradient: 'linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)',
+    icon: ShapesIcon,
   },
   {
     id: 'vehicles',
@@ -98,7 +107,8 @@ const categoryNames = {
   fruits: 'Fruits',
   vegetables: 'Vegetables',
   birds: 'Birds',
-  colors: 'Colors & Shapes',
+  colors: 'Colors',
+  shapes: 'Shapes',
   vehicles: 'Vehicles',
   bodyparts: 'Body Parts',
   weather: 'Weather',
@@ -106,30 +116,58 @@ const categoryNames = {
 };
 
 function CategorySelector({ onSelect, progress, lastCategory }) {
+  const { isDark, toggleTheme } = useTheme();
+
   return (
     <div className="category-selector">
+      {/* Theme Toggle Button */}
+      <button className="theme-toggle" onClick={toggleTheme} aria-label="Toggle dark mode">
+        {isDark ? (
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="5" stroke="currentColor" strokeWidth="2"/>
+            <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+          </svg>
+        ) : (
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        )}
+      </button>
+
+      {/* Floating Background Shapes */}
+      <div className="floating-shapes">
+        <div className="floating-shape shape-1"></div>
+        <div className="floating-shape shape-2"></div>
+        <div className="floating-shape shape-3"></div>
+        <div className="floating-shape shape-4"></div>
+        <div className="floating-shape shape-5"></div>
+        <div className="floating-shape shape-6"></div>
+        <div className="floating-shape shape-7"></div>
+        <div className="floating-shape shape-8"></div>
+      </div>
+
       {/* Hero Section with Floating Cards */}
       <section className="hero-section">
         {/* Hero Content */}
         <div className="hero-content">
           {/* Floating preview cards - horizontal row */}
           <div className="floating-cards">
-            <div className="preview-card preview-card-1" onClick={() => onSelect('alphabet')}>
+            <div className="preview-card preview-card-1 haptic-tap press-effect" onClick={() => onSelect('alphabet')}>
               <span className="preview-category">Alphabet</span>
               <span className="preview-emoji">A</span>
               <span className="preview-name">Apple</span>
             </div>
-            <div className="preview-card preview-card-2" onClick={() => onSelect('animals')}>
+            <div className="preview-card preview-card-2 haptic-tap press-effect" onClick={() => onSelect('animals')}>
               <span className="preview-category">Animals</span>
               <span className="preview-emoji">🐘</span>
               <span className="preview-name">Elephant</span>
             </div>
-            <div className="preview-card preview-card-3" onClick={() => onSelect('fruits')}>
+            <div className="preview-card preview-card-3 haptic-tap press-effect" onClick={() => onSelect('fruits')}>
               <span className="preview-category">Fruits</span>
               <span className="preview-emoji">🍎</span>
               <span className="preview-name">Apple</span>
             </div>
-            <div className="preview-card preview-card-4" onClick={() => onSelect('numbers')}>
+            <div className="preview-card preview-card-4 haptic-tap press-effect" onClick={() => onSelect('numbers')}>
               <span className="preview-category">Numbers</span>
               <span className="preview-emoji">5</span>
               <span className="preview-name">Five</span>
@@ -151,7 +189,7 @@ function CategorySelector({ onSelect, progress, lastCategory }) {
           <div className="hero-buttons">
             {lastCategory && (
               <button
-                className="hero-continue"
+                className="hero-continue haptic-tap"
                 onClick={() => onSelect(lastCategory)}
               >
                 Continue: {categoryNames[lastCategory]}
@@ -161,7 +199,7 @@ function CategorySelector({ onSelect, progress, lastCategory }) {
               </button>
             )}
             <button
-              className="hero-cta"
+              className="hero-cta haptic-tap"
               onClick={() => document.getElementById('categories').scrollIntoView({ behavior: 'smooth' })}
             >
               {lastCategory ? 'Browse Categories' : 'Start Learning'}
@@ -170,7 +208,7 @@ function CategorySelector({ onSelect, progress, lastCategory }) {
               </svg>
             </button>
           </div>
-          <p className="hero-stat">11 Categories with 200+ Flash Cards</p>
+          <p className="hero-stat">12 Categories with 200+ Flash Cards</p>
         </div>
 
         {/* Scroll Indicator */}
@@ -194,18 +232,33 @@ function CategorySelector({ onSelect, progress, lastCategory }) {
             const categoryProgress = progress[category.id] || { viewed: [], mastered: [] };
             const totalCards = getCategoryTotal(category.id);
             const masteredCount = categoryProgress.mastered?.length || 0;
+            const isComplete = masteredCount >= totalCards;
             const IconComponent = category.icon;
 
             return (
               <button
                 key={category.id}
-                className="category-card"
+                className={`category-card haptic-tap ${isComplete ? 'completed' : ''}`}
                 style={{
                   '--card-color': category.color,
                   '--card-gradient': category.gradient
                 }}
                 onClick={() => onSelect(category.id)}
               >
+                {/* Completion Stars */}
+                {isComplete && (
+                  <div className="completion-stars">
+                    <svg className="star star-1" viewBox="0 0 24 24" fill="#fbbf24">
+                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                    </svg>
+                    <svg className="star star-2" viewBox="0 0 24 24" fill="#fbbf24">
+                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                    </svg>
+                    <svg className="star star-3" viewBox="0 0 24 24" fill="#fbbf24">
+                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                    </svg>
+                  </div>
+                )}
                 <div className="card-illustration">
                   <IconComponent />
                 </div>
@@ -221,22 +274,52 @@ function CategorySelector({ onSelect, progress, lastCategory }) {
                             d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                           />
                           <path
-                            className="progress-fill"
+                            className={`progress-fill ${isComplete ? 'complete' : ''}`}
                             strokeDasharray={`${(masteredCount / totalCards) * 100}, 100`}
                             d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                           />
                         </svg>
-                        <span className="progress-text">{masteredCount}/{totalCards}</span>
+                        <span className="progress-text">
+                          {isComplete ? (
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                              <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                          ) : (
+                            `${masteredCount}/${totalCards}`
+                          )}
+                        </span>
+                      </div>
+                      <div className="card-arrow">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                          <path d="M9 18l6-6-6-6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
                       </div>
                     </div>
                   ) : (
-                    <div className="start-badge">{totalCards} cards to learn</div>
+                    <div className="start-badge">
+                      <svg className="start-badge-icon" viewBox="0 0 24 24" fill="none">
+                        {/* Rocket body */}
+                        <path d="M12 2C12 2 8 6 8 12c0 2 1 4 2 5h4c1-1 2-3 2-5 0-6-4-10-4-10z" fill="#6366f1"/>
+                        {/* Rocket tip */}
+                        <path d="M12 2C12 2 10 5 10 8h4c0-3-2-6-2-6z" fill="#a5b4fc"/>
+                        {/* Window */}
+                        <circle cx="12" cy="9" r="2" fill="#38bdf8"/>
+                        <circle cx="12" cy="9" r="1" fill="#fff" opacity="0.5"/>
+                        {/* Fins */}
+                        <path d="M8 12l-3 5h3v-5z" fill="#f43f5e"/>
+                        <path d="M16 12l3 5h-3v-5z" fill="#f43f5e"/>
+                        {/* Fire */}
+                        <path d="M10 17c0 0-1 3-1 4s1 1 1.5 1c0.5 0 0.5-1 1.5-1s1 1 1.5 1c0.5 0 1.5 0 1.5-1s-1-4-1-4h-4z" fill="#fbbf24"/>
+                        <path d="M11 17c0 0-.5 2-.5 3s.5.5 1.5.5 1.5.5 1.5-.5-.5-3-.5-3h-2z" fill="#fb923c"/>
+                      </svg>
+                      <span>{totalCards} cards to learn</span>
+                      <div className="card-arrow">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                          <path d="M9 18l6-6-6-6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </div>
+                    </div>
                   )}
-                </div>
-                <div className="card-arrow">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                    <path d="M9 18l6-6-6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
                 </div>
               </button>
             );
@@ -245,8 +328,7 @@ function CategorySelector({ onSelect, progress, lastCategory }) {
       </div>
 
       <footer className="app-footer">
-        <p>Made with ❤️ for curious little minds</p>
-        <p className="attribution">Animal icons by <a href="https://icons8.com" target="_blank" rel="noopener noreferrer">Icons8</a></p>
+        <p>Made with ❤️ for curious little minds by Mohamed Rafideen</p>
       </footer>
     </div>
   );
@@ -258,11 +340,12 @@ function getCategoryTotal(categoryId) {
     case 'numbers': return 10;
     case 'animals': return 46;
     case 'fruits': return 18;
-    case 'vegetables': return 18;
-    case 'birds': return 17;
-    case 'colors': return 17;
-    case 'vehicles': return 21;
-    case 'bodyparts': return 18;
+    case 'vegetables': return 20;
+    case 'birds': return 21;
+    case 'colors': return 9;
+    case 'shapes': return 15;
+    case 'vehicles': return 20;
+    case 'bodyparts': return 17;
     case 'weather': return 22;
     case 'emotions': return 25;
     default: return 0;
@@ -417,6 +500,21 @@ function ColorsIcon() {
       <circle cx="25" cy="70" r="14" fill="#ec4899"/>
       {/* Center star shape */}
       <path d="M60 50 L63 58 L72 58 L65 64 L68 72 L60 67 L52 72 L55 64 L48 58 L57 58 Z" fill="rgba(255,255,255,0.9)"/>
+    </svg>
+  );
+}
+
+function ShapesIcon() {
+  return (
+    <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+      {/* Circle */}
+      <circle cx="35" cy="35" r="22" fill="rgba(255,255,255,0.9)" stroke="#8b5cf6" strokeWidth="3"/>
+      {/* Square */}
+      <rect x="65" y="15" width="40" height="40" rx="4" fill="rgba(255,255,255,0.9)" stroke="#6366f1" strokeWidth="3"/>
+      {/* Triangle */}
+      <path d="M35 65 L55 100 L15 100 Z" fill="rgba(255,255,255,0.9)" stroke="#a855f7" strokeWidth="3" strokeLinejoin="round"/>
+      {/* Star */}
+      <path d="M85 70 L89 82 L102 82 L91 90 L95 102 L85 94 L75 102 L79 90 L68 82 L81 82 Z" fill="#fbbf24" stroke="#f59e0b" strokeWidth="2"/>
     </svg>
   );
 }

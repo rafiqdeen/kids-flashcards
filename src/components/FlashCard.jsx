@@ -1,8 +1,23 @@
-import { useState } from 'react';
+import { useState, useImperativeHandle, forwardRef } from 'react';
 import './FlashCard.css';
 
-function FlashCard({ frontContent, backContent, onFlip, cardType = 'default', compact = false }) {
+const FlashCard = forwardRef(function FlashCard({ frontContent, backContent, onFlip, cardType = 'default', compact = false }, ref) {
   const [isFlipped, setIsFlipped] = useState(false);
+
+  // Note: Flip state resets automatically when parent uses key={currentIndex} on wrapper
+  // This causes React to remount the component when navigating between cards
+
+  // Expose flip method to parent via ref
+  useImperativeHandle(ref, () => ({
+    flip: () => {
+      const newFlipped = !isFlipped;
+      setIsFlipped(newFlipped);
+      if (onFlip) {
+        onFlip(newFlipped);
+      }
+    },
+    isFlipped: () => isFlipped
+  }));
 
   const handleClick = () => {
     setIsFlipped(!isFlipped);
@@ -21,9 +36,19 @@ function FlashCard({ frontContent, backContent, onFlip, cardType = 'default', co
           {backContent}
         </div>
       </div>
-      {!compact && <p className="flip-hint">Tap to flip!</p>}
+      {!compact && (
+        <p className="flip-hint">
+          <svg className="flip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M17 1l4 4-4 4" />
+            <path d="M3 11V9a4 4 0 0 1 4-4h14" />
+            <path d="M7 23l-4-4 4-4" />
+            <path d="M21 13v2a4 4 0 0 1-4 4H3" />
+          </svg>
+          <span>Tap to flip!</span>
+        </p>
+      )}
     </div>
   );
-}
+});
 
 export default FlashCard;
