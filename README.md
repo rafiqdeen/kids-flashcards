@@ -2,6 +2,8 @@
 
 An interactive and fun flash cards learning app designed for children. Help kids learn the alphabet, numbers, animals, and much more through engaging flip cards, audio pronunciation, and quizzes!
 
+**Live Demo:** [https://kidscards.vercel.app](https://kidscards.vercel.app)
+
 ## Features
 
 - **11 Learning Categories**
@@ -42,6 +44,11 @@ An interactive and fun flash cards learning app designed for children. Help kids
   - Fun animations and effects
   - Responsive for tablets and phones
   - Native emoji graphics for fast loading
+
+- **Progressive Web App (PWA)**
+  - Install on mobile home screen
+  - Works offline
+  - Fast loading with caching
 
 ## Screenshots
 
