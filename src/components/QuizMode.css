@@ -1,6 +1,6 @@
 .quiz-mode {
   min-height: 100vh;
-  padding: 16px;
+  padding: 16px 20px;
   position: relative;
   background: linear-gradient(180deg, #fff7ed 0%, #fef3c7 50%, #ecfccb 100%);
 }
@@ -117,6 +117,7 @@
 
 .quiz-question {
   text-align: center;
+  overflow: visible;
 }
 
 .question-emoji {
@@ -216,9 +217,10 @@
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 12px;
-  max-width: 500px;
+  max-width: 540px;
   margin: 0 auto;
-  padding: 0 16px;
+  padding: 8px 24px;
+  overflow: visible;
 }
 
 .quiz-option {

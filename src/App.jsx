@@ -3,6 +3,7 @@ import CategorySelector from './components/CategorySelector';
 import CardDeck from './components/CardDeck';
 import QuizMode from './components/QuizMode';
 import ShapeSVG from './components/ShapeSVG';
+import { PWAUpdatePrompt } from './components/PWAUpdatePrompt';
 import { useProgress } from './hooks/useProgress';
 import { useSound } from './hooks/useSound';
 import { useSpeech } from './hooks/useSpeech';
@@ -158,6 +159,37 @@ function App() {
     }
   };
 
+  const getCategoryColor = () => {
+    switch (currentCategory) {
+      case 'alphabet':
+        return '#6366f1';
+      case 'numbers':
+        return '#14b8a6';
+      case 'animals':
+        return '#f43f5e';
+      case 'fruits':
+        return '#f59e0b';
+      case 'vegetables':
+        return '#22c55e';
+      case 'birds':
+        return '#0ea5e9';
+      case 'colors':
+        return '#a855f7';
+      case 'shapes':
+        return '#8b5cf6';
+      case 'vehicles':
+        return '#ef4444';
+      case 'bodyparts':
+        return '#ec4899';
+      case 'weather':
+        return '#06b6d4';
+      case 'emotions':
+        return '#eab308';
+      default:
+        return '#6366f1';
+    }
+  };
+
   const renderCardFront = (card) => {
     const categoryName = getCategoryName();
 
@@ -302,10 +334,14 @@ function App() {
         e.stopPropagation();
         handleSpeak(text, type);
       }}
+      onTouchStart={(e) => e.stopPropagation()}
+      onTouchEnd={(e) => e.stopPropagation()}
       aria-label={`Listen to ${text}`}
     >
-      <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
-        <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M11 5L6 9H2v6h4l5 4V5z" />
+        <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+        <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
       </svg>
     </button>
   );
@@ -529,6 +565,7 @@ function App() {
           progress={progress}
           lastCategory={lastCategory}
         />
+        <PWAUpdatePrompt />
       </div>
     );
   }
@@ -543,6 +580,7 @@ function App() {
           playSound={playSound}
           getDisplayValue={getQuizDisplayValue}
         />
+        <PWAUpdatePrompt />
       </div>
     );
   }
@@ -552,6 +590,7 @@ function App() {
       <CardDeck
         cards={getCategoryData()}
         category={getCategoryName()}
+        categoryColor={getCategoryColor()}
         renderFront={renderCardFront}
         renderBack={renderCardBack}
         onBack={handleBackToHome}
@@ -561,6 +600,7 @@ function App() {
         onCardMastered={(cardId) => markMastered(currentCategory, cardId)}
         playSound={playSound}
       />
+      <PWAUpdatePrompt />
     </div>
   );
 }

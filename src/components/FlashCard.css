@@ -252,10 +252,10 @@
   height: 320px;
 }
 
-/* Back of card - smaller image to fit with text */
+/* Back of card - image with space for text at bottom */
 .flashcard-back .card-image {
-  width: 180px;
-  height: 180px;
+  width: 220px;
+  height: 220px;
 }
 
 /* SVG Illustration display */
@@ -305,28 +305,44 @@
   text-align: center;
 }
 
-/* Word row with speaker */
+/* Word row with hint badge */
 .card-word-row {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 8px;
   margin-top: auto;
-  position: relative;
   z-index: 1;
   padding-bottom: 8px;
+  width: 100%;
 }
 
-/* Hint badge - subtle style for white cards */
-.card-hint-badge {
-  background: #f0f0f0;
-  color: #666;
-  padding: var(--space-sm) var(--space-md);
-  border-radius: var(--radius-lg);
-  font-size: 13px;
-  font-weight: 500;
-  max-width: 90%;
+.card-word-row .card-word {
   text-align: center;
+  margin-bottom: 70px;
+}
+
+.card-word-row .card-hint-badge {
+  position: absolute;
+  bottom: 40px;
+  left: 20px;
+}
+
+/* Hint badge - pill shape to match speaker icon height */
+.card-hint-badge {
+  background: color-mix(in srgb, var(--category-color, var(--primary)) 15%, transparent);
+  color: #444;
+  padding: 12px 20px;
+  border-radius: var(--radius-full);
+  font-size: 14px;
+  font-weight: 600;
+  max-width: 70%;
+  text-align: center;
+  border: none;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* Simple hint text */
@@ -339,38 +355,44 @@
   z-index: 1;
 }
 
-/* Tap hint on front */
+/* Tap hint on front - centered */
 .card-tap-hint {
-  font-size: 14px;
+  font-size: 13px;
   color: #aaa;
   font-weight: 500;
-  margin-top: auto;
-  position: relative;
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
   z-index: 1;
 }
 
-/* Speaker button - outlined minimal style */
+/* Speaker button - bottom right, aligned with hint badge */
 .speak-button {
   background: transparent;
-  border: 2px solid #ddd;
+  border: 2px solid var(--category-color, var(--primary));
   border-radius: 50%;
-  width: 44px;
-  height: 44px;
+  width: 48px;
+  height: 48px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: var(--cursor-pointer);
-  color: #666;
-  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  color: var(--category-color, var(--primary));
+  transition: all 0.2s ease;
   flex-shrink: 0;
-  margin-top: 4px;
+  position: absolute;
+  bottom: 40px;
+  right: 20px;
+  z-index: 10;
 }
 
 .speak-button:hover {
-  background: #f5f5f5;
-  border-color: #bbb;
-  color: #333;
-  transform: scale(1.1);
+  background: var(--category-color, var(--primary));
+  border-color: var(--category-color, var(--primary));
+  color: white;
+  transform: scale(1.08);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--category-color, var(--primary)) 30%, transparent);
 }
 
 .speak-button:active {
@@ -378,8 +400,9 @@
 }
 
 .speak-button svg {
-  width: 24px;
-  height: 24px;
+  width: 26px;
+  height: 26px;
+  pointer-events: none;
 }
 
 /* Visual balloons for numbers */
@@ -449,8 +472,8 @@
   }
 
   .flashcard-back .card-image {
-    width: 160px;
-    height: 160px;
+    width: 200px;
+    height: 200px;
   }
 
   .card-illustration {
@@ -505,8 +528,8 @@
   }
 
   .flashcard-back .card-image {
-    width: 150px;
-    height: 150px;
+    width: 180px;
+    height: 180px;
     border-radius: 14px;
   }
 
@@ -531,11 +554,25 @@
   .speak-button {
     width: 44px;
     height: 44px;
+    bottom: 36px;
+    right: 18px;
   }
 
   .speak-button svg {
-    width: 22px;
-    height: 22px;
+    width: 20px;
+    height: 20px;
+  }
+
+  .card-tap-hint {
+    bottom: 16px;
+  }
+
+  .card-word-row .card-hint-badge {
+    bottom: 36px;
+    left: 18px;
+    height: 44px;
+    font-size: 13px;
+    padding: 10px 16px;
   }
 }
 
@@ -572,8 +609,8 @@
   }
 
   .flashcard-back .card-image {
-    width: 120px;
-    height: 120px;
+    width: 150px;
+    height: 150px;
     border-radius: 12px;
   }
 
@@ -604,18 +641,40 @@
     font-size: 14px;
   }
 
-  .speak-button {
-    width: 40px;
-    height: 40px;
-  }
-
-  .speak-button svg {
-    width: 20px;
-    height: 20px;
+  .card-tap-hint {
+    bottom: 14px;
+    font-size: 12px;
   }
 
   .card-word-row {
-    gap: 8px;
+    gap: 6px;
+    margin-top: 0;
+    flex: 1;
+    justify-content: center;
+  }
+
+  .card-word-row .card-word {
+    margin-bottom: 40px;
+  }
+
+  .card-word-row .card-hint-badge {
+    bottom: 24px;
+    left: 14px;
+    height: 36px;
+    font-size: 11px;
+    padding: 6px 12px;
+  }
+
+  .speak-button {
+    bottom: 24px;
+    right: 14px;
+    width: 36px;
+    height: 36px;
+  }
+
+  .speak-button svg {
+    width: 16px;
+    height: 16px;
   }
 }
 
@@ -663,8 +722,8 @@
 }
 
 .dark .card-hint-badge {
-  background: #334155;
-  color: #94a3b8;
+  background: color-mix(in srgb, var(--category-color, var(--primary)) 20%, transparent);
+  color: #fff;
 }
 
 .dark .card-tap-hint {
@@ -672,14 +731,15 @@
 }
 
 .dark .speak-button {
-  border-color: #475569;
-  color: #94a3b8;
+  border-color: var(--category-color, var(--primary));
+  color: var(--category-color, var(--primary));
 }
 
 .dark .speak-button:hover {
-  background: #334155;
-  border-color: #64748b;
-  color: #f1f5f9;
+  background: var(--category-color, var(--primary));
+  border-color: var(--category-color, var(--primary));
+  color: white;
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--category-color, var(--primary)) 40%, transparent);
 }
 
 .dark .flashcard-front {

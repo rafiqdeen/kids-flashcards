@@ -1,7 +1,7 @@
 import { useState, useImperativeHandle, forwardRef } from 'react';
 import './FlashCard.css';
 
-const FlashCard = forwardRef(function FlashCard({ frontContent, backContent, onFlip, cardType = 'default', compact = false }, ref) {
+const FlashCard = forwardRef(function FlashCard({ frontContent, backContent, onFlip, cardType = 'default', compact = false, categoryColor }, ref) {
   const [isFlipped, setIsFlipped] = useState(false);
 
   // Note: Flip state resets automatically when parent uses key={currentIndex} on wrapper
@@ -27,7 +27,11 @@ const FlashCard = forwardRef(function FlashCard({ frontContent, backContent, onF
   };
 
   return (
-    <div className={`flashcard-container ${cardType} ${compact ? 'compact' : ''}`} onClick={handleClick}>
+    <div
+      className={`flashcard-container ${cardType} ${compact ? 'compact' : ''}`}
+      onClick={handleClick}
+      style={categoryColor ? { '--category-color': categoryColor } : undefined}
+    >
       <div className={`flashcard ${isFlipped ? 'flipped' : ''}`}>
         <div className="flashcard-front">
           {frontContent}

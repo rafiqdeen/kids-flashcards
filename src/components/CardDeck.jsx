@@ -6,6 +6,7 @@ import './CardDeck.css';
 function CardDeck({
   cards,
   category,
+  categoryColor,
   renderFront,
   renderBack,
   onBack,
@@ -357,6 +358,7 @@ function CardDeck({
                 backContent={renderBack(currentCard)}
                 onFlip={(isFlipped) => handleFlip(currentCard, isFlipped)}
                 cardType={category.toLowerCase()}
+                categoryColor={categoryColor}
               />
             </div>
           </div>

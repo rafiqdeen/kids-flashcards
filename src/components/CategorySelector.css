@@ -1003,7 +1003,7 @@
   }
 }
 
-/* 1 card per row on mobile */
+/* 2 cards per row on mobile - matching web style */
 @media (max-width: 500px) {
   .hero-section {
     min-height: 100vh;
@@ -1083,26 +1083,67 @@
   }
 
   .cards-wrapper {
-    padding: 0 16px 32px;
+    padding: 0 12px 32px;
   }
 
   .category-scroll {
-    grid-template-columns: 1fr;
-    gap: 16px;
-    max-width: 400px;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    max-width: 100%;
   }
 
   .category-card {
-    height: 280px;
+    height: 200px;
   }
 
   .card-illustration {
-    height: 120px;
+    height: 100px;
   }
 
   .card-illustration svg {
-    width: 90px;
-    height: 90px;
+    width: 80px;
+    height: 80px;
+  }
+
+  .card-content {
+    padding: 0 12px 12px;
+  }
+
+  .category-name {
+    font-size: 15px;
+  }
+
+  .category-description {
+    font-size: 11px;
+    display: none;
+  }
+
+  .category-progress {
+    padding-top: 8px;
+  }
+
+  .progress-ring svg {
+    width: 32px;
+    height: 32px;
+  }
+
+  .category-card .progress-text {
+    font-size: 12px;
+  }
+
+  .start-badge {
+    padding-top: 8px;
+    font-size: 11px;
+  }
+
+  .start-badge svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .card-arrow {
+    width: 28px;
+    height: 28px;
   }
 }
 
