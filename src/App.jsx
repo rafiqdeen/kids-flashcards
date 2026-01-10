@@ -446,7 +446,7 @@ function App() {
         return (
           <>
             <span className="card-category">{categoryName}</span>
-            <span className="card-emoji" role="img" aria-label={card.name}>{card.emoji}</span>
+            <div className="color-circle" style={{ backgroundColor: card.hex }} />
             <div className="card-word-row">
               <span className="card-word">{card.name}</span>
               <span className="card-hint-badge">{card.example}</span>

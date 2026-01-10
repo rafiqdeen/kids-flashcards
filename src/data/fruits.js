@@ -1,7 +1,7 @@
 export const fruits = [
   // Common Fruits
   { id: 'apple', name: 'Apple', emoji: '🍎', color: 'Red', hint: 'Keeps the doctor away', image: 'https://images.unsplash.com/photo-1579613832125-5d34a13ffe2a?w=400&h=400&fit=crop' },
-  { id: 'green_apple', name: 'Green Apple', emoji: '🍏', color: 'Green', hint: 'Sour and crunchy', image: 'https://loremflickr.com/cache/resized/65535_49057400202_3b5eea607c_z_400_400_nofilter.jpg' },
+  { id: 'green_apple', name: 'Green Apple', emoji: '🍏', color: 'Green', hint: 'Sour and crunchy', image: 'https://images.unsplash.com/photo-1678942946279-c83e37f32304?w=400&h=400&fit=crop' },
   { id: 'banana', name: 'Banana', emoji: '🍌', color: 'Yellow', hint: 'Monkeys love it', image: 'https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=400&h=400&fit=crop' },
   { id: 'orange', name: 'Orange', emoji: '🍊', color: 'Orange', hint: 'Full of vitamin C', image: 'https://images.unsplash.com/photo-1547514701-42782101795e?w=400&h=400&fit=crop' },
   { id: 'grapes', name: 'Grapes', emoji: '🍇', color: 'Purple', hint: 'Grow in bunches', image: 'https://images.unsplash.com/photo-1537640538966-79f369143f8f?w=400&h=400&fit=crop' },
