@@ -1,0 +1,135 @@
+/* ============================================================
+   PIP CARDS — Design Tokens
+   Warm / playful / claymorphic. Light + Dark. Two directions:
+   [data-direction="clay"]  — soft puffy claymorphic surfaces
+   [data-direction="pop"]   — sticker-book bold outlines + rims
+   ============================================================ */
+
+@font-face {
+  font-family: 'Lexend';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url(/fonts/lexend-variable.woff2) format('woff2');
+}
+
+:root {
+  /* ---- Type ---- */
+  --font: 'Lexend', system-ui, sans-serif;
+  --fs-display: clamp(34px, 8vw, 56px);
+  --fs-h1: clamp(26px, 5vw, 36px);
+  --fs-h2: 24px;
+  --fs-h3: 20px;
+  --fs-body: 18px;
+  --fs-label: 15px;
+  --fs-mega: clamp(96px, 30vw, 200px); /* big letters/numbers on card fronts */
+  --fw-reg: 500;
+  --fw-med: 600;
+  --fw-bold: 700;
+  --fw-black: 800;
+
+  /* ---- Spacing (chunky) ---- */
+  --s-1: 4px;  --s-2: 8px;  --s-3: 12px; --s-4: 16px;
+  --s-5: 24px; --s-6: 32px; --s-7: 48px; --s-8: 64px;
+
+  /* ---- Radii (big & bubbly) ---- */
+  --r-sm: 12px; --r-md: 20px; --r-lg: 28px; --r-xl: 40px; --r-full: 999px;
+
+  /* ---- Touch target floor ---- */
+  --touch: 76px;
+
+  /* ---- Motion ---- */
+  --t-fast: 150ms; --t-med: 250ms; --t-slow: 400ms;
+  --ease-spring: cubic-bezier(.34, 1.56, .64, 1);
+  --ease-soft: cubic-bezier(.4, 0, .2, 1);
+
+  /* ---- Per-category color (literal icon always paired) ---- */
+  --cat-alphabet-1:#6366f1; --cat-alphabet-2:#8b5cf6;
+  --cat-numbers-1:#14b8a6;  --cat-numbers-2:#10b981;
+  --cat-animals-1:#f43f5e;  --cat-animals-2:#ec4899;
+  --cat-fruits-1:#f59e0b;   --cat-fruits-2:#ef4444;
+  --cat-vegetables-1:#22c55e; --cat-vegetables-2:#16a34a;
+  --cat-birds-1:#0ea5e9;    --cat-birds-2:#3b82f6;
+  --cat-colors-1:#a855f7;   --cat-colors-2:#ec4899;
+  --cat-shapes-1:#8b5cf6;   --cat-shapes-2:#6366f1;
+  --cat-vehicles-1:#ef4444; --cat-vehicles-2:#f97316;
+  --cat-body-1:#ec4899;     --cat-body-2:#f472b6;
+  --cat-weather-1:#06b6d4;  --cat-weather-2:#0ea5e9;
+  --cat-emotions-1:#eab308; --cat-emotions-2:#f59e0b;
+
+  /* ---- Reward / accent pops ---- */
+  --pop-sun:#fbbf24; --pop-coral:#fb7185; --pop-teal:#2dd4bf;
+  --pop-sky:#38bdf8; --pop-grass:#4ade80; --pop-grape:#a78bfa;
+  --gold:#f6b73c;
+}
+
+/* ================= LIGHT THEME ================= */
+[data-theme="light"] {
+  --bg: #fff3e2;
+  --bg-2: #ffe9d2;
+  --surface: #fffaf3;
+  --surface-2: #fff1e0;
+  --surface-3: #ffe6cf;
+  --ink: #43301f;        /* text-high */
+  --ink-2: #735a45;      /* text-medium */
+  --ink-3: #a3866d;      /* text-low */
+  --rose: #f6d4c8;
+  --rose-deep: #e7a695;
+  --on-pop: #ffffff;
+  --shadow-rgb: 120, 72, 36;
+  --highlight: rgba(255,255,255,0.9);
+}
+
+/* ================= DARK THEME ================= */
+[data-theme="dark"] {
+  --bg: #241a13;
+  --bg-2: #2c211896;
+  --surface: #34271d;
+  --surface-2: #3e2f23;
+  --surface-3: #4a392b;
+  --ink: #fbeede;
+  --ink-2: #d8c2ab;
+  --ink-3: #a8917c;
+  --rose: #5a3f33;
+  --rose-deep: #8a5a48;
+  --on-pop: #2a1d12;
+  --shadow-rgb: 0, 0, 0;
+  --highlight: rgba(255,255,255,0.06);
+}
+
+/* ================= DIRECTION: CLAY (soft puffy) ================= */
+[data-direction="clay"] {
+  --card-bg: var(--surface);
+  --stroke-w: 0px;
+  --stroke: transparent;
+  --rim: 0 0 0 0 transparent;
+  /* puffy claymorphic: drop shadow + inner light highlight */
+  --elev-1: 0 4px 0 rgba(var(--shadow-rgb), .10), 0 8px 18px rgba(var(--shadow-rgb), .14), inset 0 2px 3px var(--highlight);
+  --elev-2: 0 8px 0 rgba(var(--shadow-rgb), .12), 0 16px 34px rgba(var(--shadow-rgb), .18), inset 0 3px 4px var(--highlight);
+  --elev-press: 0 2px 0 rgba(var(--shadow-rgb), .12), inset 0 3px 8px rgba(var(--shadow-rgb), .14);
+  --tile-extra: inset 0 -6px 10px rgba(var(--shadow-rgb), .10);
+}
+
+/* ================= DIRECTION: POP (sticker-book) ================= */
+[data-direction="pop"] {
+  --card-bg: var(--surface);
+  --stroke-w: 3px;
+  --stroke: #3a2a1d;
+  /* white sticker rim + offset hard shadow */
+  --rim: 0 0 0 4px #fffaf3;
+  --elev-1: var(--rim), 4px 5px 0 rgba(var(--shadow-rgb), .28);
+  --elev-2: var(--rim), 7px 8px 0 rgba(var(--shadow-rgb), .32);
+  --elev-press: var(--rim), 2px 2px 0 rgba(var(--shadow-rgb), .30);
+  --tile-extra: none;
+}
+[data-direction="pop"][data-theme="dark"] { --rim: 0 0 0 4px #34271d; --stroke:#1c130c; }
+
+/* ---- Base element resets used across the prototype ---- */
+* { box-sizing: border-box; }
+body { margin: 0; font-family: var(--font); }
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: .001ms !important; animation-iteration-count: 1 !important;
+      transition-duration: .001ms !important; scroll-behavior: auto !important; }
+}

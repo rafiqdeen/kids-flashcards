@@ -8,7 +8,7 @@ Verification log lives in `VERIFICATION.md` (created in Phase 1+).
 | Phase | Status | Notes |
 |---|---|---|
 | 0 — Audit & plan | ✅ done | This document |
-| 1 — Foundations | ⏳ pending | |
+| 1 — Foundations | ✅ done | 15/15 checks; see VERIFICATION.md |
 | 2 — Primitives | ⏳ pending | |
 | 3 — Core loop | ⏳ pending | |
 | 4 — Quiz | ⏳ pending | |
@@ -58,6 +58,13 @@ New code goes in these locations; reference file noted in parens.
 - **Not replicated** (per prompt): tweaks panel, device bezels, CDN/Babel, `window.*` globals, hard-coded parent stats, simulated update toast.
 
 ## Decisions (recorded per working discipline)
+
+0. **UI prefs in `pip-settings`:** `theme`, `direction`, `mascot` persist as
+   additional keys on the `pip-settings` schema (additive; README schema keys
+   unchanged). Prototype kept these in the Tweaks panel, which is excluded.
+   Default mascot is `pip` (brand) — the prototype's `TWEAK_DEFAULTS.mascot:
+   "bear"` is reviewer scaffolding, README brand precedence applies.
+
 
 1. **Card art:** existing datasets keep their fields, but rendering goes through `<Illu name={card.id} fallback={card.emoji}>`; cards without a bespoke outline render the emoji inside the chunky art chip (vector-consistent placeholder, swappable layer preserved). Remote `image` URLs are no longer rendered anywhere.
 2. **Progress migration:** one-time read of `kids-flashcards-progress` → seed `pip-progress` with `{cat: mastered[]}` so existing kids don't lose mastery; old key left untouched.

@@ -7,6 +7,8 @@ import { PWAUpdatePrompt } from './components/PWAUpdatePrompt';
 import { useProgress } from './hooks/useProgress';
 import { useSound } from './hooks/useSound';
 import { useSpeech } from './hooks/useSpeech';
+import { useSettings } from './hooks/useSettings';
+import { useViewport } from './hooks/useViewport';
 import { alphabet } from './data/alphabet';
 import { numbers } from './data/numbers';
 import { animals } from './data/animals';
@@ -27,6 +29,8 @@ function App() {
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [transitionDirection, setTransitionDirection] = useState('enter'); // enter, exit
   const { progress, lastCategory, markViewed, markMastered, getCategoryProgress } = useProgress();
+  useSettings(); // applies data-theme / data-direction to the app root
+  useViewport(); // applies web / tablet breakpoint classes
   const { playSound } = useSound();
   const { speakWord, speakLetter, speakNumber, speakPhrase } = useSpeech();
 

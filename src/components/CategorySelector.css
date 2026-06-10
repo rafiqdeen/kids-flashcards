@@ -207,11 +207,6 @@
   z-index: 10;
 }
 
-.preview-card:focus-visible {
-  outline: 3px solid #6366f1;
-  outline-offset: 4px;
-}
-
 .preview-category {
   font-size: 12px;
   font-weight: 600;
