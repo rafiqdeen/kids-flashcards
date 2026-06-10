@@ -9,7 +9,7 @@ Verification log lives in `VERIFICATION.md` (created in Phase 1+).
 |---|---|---|
 | 0 — Audit & plan | ✅ done | This document |
 | 1 — Foundations | ✅ done | 15/15 checks; see VERIFICATION.md |
-| 2 — Primitives | ⏳ pending | |
+| 2 — Primitives | ✅ done | 23/23 checks; new code under `src/pip/` |
 | 3 — Core loop | ⏳ pending | |
 | 4 — Quiz | ⏳ pending | |
 | 5 — Rewards + Paint | ⏳ pending | |

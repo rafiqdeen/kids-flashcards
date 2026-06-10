@@ -28,6 +28,11 @@ h1 { font-size: var(--fs-h1); }
 .shelf-title { font-size: var(--fs-h3); font-weight: var(--fw-bold); color: var(--ink); margin: var(--s-5) 0 var(--s-3); }
 p { margin: 0; color: var(--ink-2); font-size: var(--fs-body); line-height: 1.4; }
 
+/* Buttons/selects don't inherit font or color from the page — without this
+   reset, UA black text leaks into tiles/options and breaks dark theme contrast
+   (reference-file bug, recorded in VERIFICATION.md). */
+button, select, input { font: inherit; color: inherit; }
+
 /* ---------- Focus-visible (global, thick, high-contrast) ---------- */
 :focus { outline: none; }
 button:focus-visible, select:focus-visible, [tabindex]:focus-visible, .flashcard:focus-visible, a:focus-visible {
@@ -191,8 +196,16 @@ button:focus-visible, select:focus-visible, [tabindex]:focus-visible, .flashcard
   box-shadow: var(--elev-2);
   padding: var(--s-5);
 }
-.face.front { background: linear-gradient(165deg, color-mix(in oklab, var(--card-color) 12%, var(--card-bg)), var(--card-bg)); }
-.face.back { transform: rotateY(180deg); background: linear-gradient(165deg, color-mix(in oklab, var(--card-color) 16%, var(--card-bg)), var(--card-bg)); }
+/* Faces get a hair of Z separation so the visible face wins by depth, and the
+   back face keeps its backface hit-testable: Chromium culls hit-tests on
+   backface-hidden planes at exactly 180°, making the SpeakButton untappable. */
+.face.front { background: linear-gradient(165deg, color-mix(in oklab, var(--card-color) 12%, var(--card-bg)), var(--card-bg)); transform: translateZ(0.6px); }
+.face.back { transform: rotateY(180deg) translateZ(0.6px); backface-visibility: visible; -webkit-backface-visibility: visible; background: linear-gradient(165deg, color-mix(in oklab, var(--card-color) 16%, var(--card-bg)), var(--card-bg)); }
+/* only the visible face takes pointer events; taps fall through to the card */
+.flashcard-3d { pointer-events: none; }
+.face.front { pointer-events: auto; }
+.flashcard .face.back, .flashcard.flipped .face.front { pointer-events: none; }
+.flashcard.flipped .face.back { pointer-events: auto; }
 .card-mega { font-size: var(--fs-mega); font-weight: var(--fw-black); line-height: .9; }
 .card-mega.sm { font-size: 90px; }
 .flip-hint { position: absolute; bottom: var(--s-4); font-size: var(--fs-label); font-weight: var(--fw-med); color: var(--ink-3); background: var(--surface-2); padding: 6px 16px; border-radius: var(--r-full); animation: pulseHint 2.4s ease-in-out infinite; }

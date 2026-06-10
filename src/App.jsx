@@ -9,6 +9,7 @@ import { useSound } from './hooks/useSound';
 import { useSpeech } from './hooks/useSpeech';
 import { useSettings } from './hooks/useSettings';
 import { useViewport } from './hooks/useViewport';
+import { Lab } from './pip/Lab.jsx';
 import { alphabet } from './data/alphabet';
 import { numbers } from './data/numbers';
 import { animals } from './data/animals';
@@ -31,6 +32,7 @@ function App() {
   const { progress, lastCategory, markViewed, markMastered, getCategoryProgress } = useProgress();
   useSettings(); // applies data-theme / data-direction to the app root
   useViewport(); // applies web / tablet breakpoint classes
+  const isLab = window.location.search.includes('pip-lab');
   const { playSound } = useSound();
   const { speakWord, speakLetter, speakNumber, speakPhrase } = useSpeech();
 
@@ -560,6 +562,10 @@ function App() {
         return '';
     }
   };
+
+  if (isLab) {
+    return <Lab />;
+  }
 
   if (currentView === 'home') {
     return (

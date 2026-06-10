@@ -32,3 +32,35 @@ Notes / fixes made during verification:
   screens yet); starts in Phase 2/3.
 
 Open diffs: none.
+
+## Phase 2 — Primitives (PASSED 23/23)
+
+Automated: `node scripts/verify-phase2.mjs` driving the `?pip-lab` harness
+(all primitives in all states); screenshots in `verification-shots/` for
+clay/pop × light/dark.
+
+| Area | Checks |
+|---|---|
+| Mascot | 6 concepts × 5 states render (30 svgs) ✅ |
+| FlashCard | role=button div (no nested buttons, no DOM warnings), click/Space/Enter flip, speak click doesn't flip, mastered ribbon ✅ |
+| Speech/captions | caption bar `role=status aria-live=polite` mirrors every announce ✅ |
+| CategoryTile | fresh "{n} cards" / in-progress % ring / done 3 stars ✅ |
+| QuizOption | correct+reveal disabled, wrong stays enabled, distinct ✓/✗ marks ✅ |
+| ProgressTrack/StreakBadge | aria progressbar, lit only when >0 ✅ |
+| SpeakButton | 84px lg per spec, wave state ✅ |
+| Reduced motion | confetti → static "Nice!" banner ✅ |
+
+Reference discrepancies found & fixed (README precedence — AA contrast,
+tappable SpeakButton):
+1. **Buttons don't inherit font/color** — reference `.cat-tile` (a `<button>`)
+   renders UA-black tile names, invisible in dark theme. Added
+   `button,select,input { font: inherit; color: inherit }` to app.css base.
+2. **Back-face hit-testing** — Chromium culls hit-tests on backface-hidden
+   planes at exactly 180°, making the back-face SpeakButton untappable in some
+   environments (and iOS Safari mis-targets similarly). Fixed with 0.6px face
+   Z-separation + per-face pointer-events + geometry routing in FlashCard's
+   click handler. Visuals unchanged (480ms spring flip per spec).
+3. **Chrome drops `onend`** — added a 500ms `speechSynthesis.speaking` watchdog
+   so the SpeakButton wave state can't stick on.
+
+Open diffs: none.
