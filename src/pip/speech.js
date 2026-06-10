@@ -33,11 +33,7 @@ if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
 // callers pass `muted || !settings.voice`.
 export function useSpeech(disabled, language = 'en-IN') {
   const [speaking, setSpeaking] = useState(false);
-  const [available, setAvailable] = useState(true);
-
-  useEffect(() => {
-    setAvailable(typeof window !== 'undefined' && 'speechSynthesis' in window);
-  }, []);
+  const available = typeof window !== 'undefined' && 'speechSynthesis' in window;
 
   const speak = useCallback((text, opts = {}) => {
     if (disabled || !text || !('speechSynthesis' in window)) return;

@@ -3,7 +3,8 @@
 // protocol (not shipped in nav; harmless in production builds).
 import { useState } from 'react';
 import { Icon } from './components/Icon.jsx';
-import { Mascot, MASCOT_CONCEPTS, MASCOT_STATES } from './components/Mascot.jsx';
+import { Mascot } from './components/Mascot.jsx';
+import { MASCOT_CONCEPTS, MASCOT_STATES } from './data/mascots.js';
 import { Illu } from './art/Illu.jsx';
 import { FlashCard } from './components/FlashCard.jsx';
 import { CategoryTile } from './components/CategoryTile.jsx';

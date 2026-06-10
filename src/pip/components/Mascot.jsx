@@ -9,9 +9,6 @@ const PALETTE = {
   monster: { body: '#2dd4bf', body2: '#14b8a6', belly: '#ccfbf1', beak: '#0f766e', cheek: '#5eead4', stroke: '#0f766e', foot: '#14b8a6', antenna: '#fb7185' },
 };
 
-export const MASCOT_CONCEPTS = ['pip', 'fox', 'owl', 'bear', 'bunny', 'monster'];
-export const MASCOT_STATES = ['idle', 'cheer', 'encourage', 'point', 'sleep'];
-
 function Eyes({ c, state }) {
   if (state === 'sleep') {
     return (
