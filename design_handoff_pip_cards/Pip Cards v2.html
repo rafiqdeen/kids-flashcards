@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+<title>Pip Cards v2 — prototype</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="tokens.css" />
+<link rel="stylesheet" href="app.css" />
+<style>
+  html, body { height: 100%; }
+  body {
+    margin: 0; font-family: 'Lexend', system-ui, sans-serif;
+    background:
+      radial-gradient(80% 60% at 20% 0%, #fde9d6, transparent),
+      radial-gradient(70% 60% at 100% 100%, #f6ddd0, transparent),
+      #efe2d3;
+    overflow: hidden;
+  }
+  .stage { position: fixed; inset: 0; display: grid; place-items: center; padding: 18px; }
+  .device-scaler { transform-origin: center center; }
+  .device {
+    position: relative; background: #1c130c; border-radius: 54px; padding: 14px;
+    box-shadow: 0 30px 70px rgba(60,30,10,.35), inset 0 0 0 2px rgba(255,255,255,.08);
+  }
+  .device.tablet { border-radius: 38px; padding: 18px; }
+  .device-notch { position: absolute; top: 16px; left: 50%; transform: translateX(-50%); width: 120px; height: 26px; background: #1c130c; border-radius: 99px; z-index: 70; }
+  .device.tablet .device-notch { display: none; }
+  .device-screen {
+    width: 390px; height: 844px; border-radius: 42px; overflow: hidden; position: relative;
+    background: var(--bg);
+  }
+  .device.tablet .device-screen { width: 834px; height: 1112px; border-radius: 24px; }
+  .app-root { height: 100%; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
+  /* bottom nav */
+  .bottom-nav {
+    position: sticky; bottom: 0; z-index: 50; display: flex; justify-content: space-around;
+    padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+    background: color-mix(in oklab, var(--surface) 88%, transparent);
+    backdrop-filter: none; border-top: 1px solid var(--surface-3);
+  }
+  .nav-item { display: flex; flex-direction: column; align-items: center; gap: 2px; background: none; border: none; cursor: pointer; color: var(--ink-3); font-family: var(--font); font-weight: var(--fw-bold); font-size: 12px; padding: 6px 16px; border-radius: var(--r-md); min-width: 60px; }
+  .nav-item.active { color: var(--cat-fruits-1); background: color-mix(in oklab, var(--cat-fruits-1) 14%, transparent); }
+  .frame-label { position: absolute; top: -30px; left: 50%; transform: translateX(-50%); font-family: var(--font); font-weight: 700; font-size: 13px; color: #8a6a4d; white-space: nowrap; }
+  /* ---- Web app view ---- */
+  .device-chrome { display: none; }
+  .device.web { border-radius: 18px; padding: 0; background: #cdbba6; }
+  .device.web .device-notch { display: none; }
+  .device.web .device-chrome { display: flex; align-items: center; gap: 8px; height: 46px; padding: 0 18px; background: #e7d8c6; border-radius: 18px 18px 0 0; }
+  .device.web .device-screen { width: 1180px; height: 720px; border-radius: 0 0 18px 18px; }
+  .chrome-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+  .chrome-url { flex: 0 1 360px; margin: 0 auto; text-align: center; font-size: 13px; font-weight: 600; color: #8a6a4d; background: #fffaf3; border-radius: 99px; padding: 7px 16px; }
+  .webshell { display: flex; height: 100%; }
+  .websidebar { width: 236px; flex-shrink: 0; background: var(--surface); border-right: 1px solid var(--surface-3); display: flex; flex-direction: column; padding: 22px 16px; gap: 6px; }
+  .web-logo { font-weight: var(--fw-black); font-size: 32px; margin: 4px 10px 20px; line-height: 1; }
+  .webnav { display: flex; flex-direction: column; gap: 6px; flex: 1; }
+  .websidebar .nav-item { flex-direction: row; justify-content: flex-start; gap: 14px; width: 100%; font-size: 16px; padding: 14px 16px; border-radius: 16px; min-width: 0; }
+  .websidebar-foot { display: flex; flex-direction: column; gap: 10px; }
+  .sb-grown { display: flex; align-items: center; gap: 12px; font-family: var(--font); font-weight: var(--fw-bold); font-size: 15px; color: var(--ink-2); background: var(--rose); border: none; border-radius: 16px; padding: 13px 16px; cursor: pointer; }
+  .sb-row { display: flex; gap: 8px; }
+  .sb-row .round-btn { flex: 1; }
+  .webmain { flex: 1; overflow-y: auto; min-width: 0; }
+  .web .screen { max-width: 1060px; margin-inline: auto; width: 100%; }
+  .web .cat-grid { grid-template-columns: repeat(4, 1fr); }
+  .web .home-bar { display: none; }
+  .web .quiz-grid { grid-template-columns: repeat(4, 1fr); max-width: 840px; margin-inline: auto; }
+  .web .quiz-opt { min-height: 150px; }
+  .web .home-hero { margin-top: var(--s-5); }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="device-scaler" id="scaler">
+    <div class="device" id="device">
+      <span class="frame-label" id="frameLabel"></span>
+      <div class="device-chrome">
+        <span class="chrome-dot" style="background:#fb7185"></span>
+        <span class="chrome-dot" style="background:#fbbf24"></span>
+        <span class="chrome-dot" style="background:#4ade80"></span>
+        <span class="chrome-url">pipcards.app</span>
+      </div>
+      <span class="device-notch"></span>
+      <div class="device-screen">
+        <div id="root" class="app-root"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+<script type="text/babel" src="mascot.jsx"></script>
+<script type="text/babel" src="data.jsx"></script>
+<script type="text/babel" src="components.jsx"></script>
+<script type="text/babel" src="screens1.jsx"></script>
+<script type="text/babel" src="screens2.jsx"></script>
+<script type="text/babel" src="screens3.jsx"></script>
+<script type="text/babel" src="screens4.jsx"></script>
+
+<script type="text/babel" data-presets="react">
+const { useState, useEffect, useCallback } = React;
+
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "direction": "clay",
+  "theme": "light",
+  "device": "web",
+  "mascot": "bear"
+}/*EDITMODE-END*/;
+
+function App() {
+  const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
+  const [route, setRoute] = useState(() => { try { return localStorage.getItem('pip-onboarded') ? 'home' : 'onboard'; } catch (e) { return 'onboard'; } });
+  const [activeCat, setActiveCat] = useState(null);
+  const [progress, setProgress] = useState(() => { try { return JSON.parse(localStorage.getItem('pip-progress') || '{}'); } catch (e) { return {}; } });      // {catId: [cardIds]}
+  const [earned, setEarned] = useState(() => { try { return JSON.parse(localStorage.getItem('pip-earned') || '[]'); } catch (e) { return []; } });
+  useEffect(() => { try { localStorage.setItem('pip-progress', JSON.stringify(progress)); } catch (e) {} }, [progress]);
+  useEffect(() => { try { localStorage.setItem('pip-earned', JSON.stringify(earned)); } catch (e) {} }, [earned]);
+  const [gallery, setGallery] = useState(() => { try { return JSON.parse(localStorage.getItem('pip-gallery') || '[]'); } catch (e) { return []; } });
+  const addArt = (art) => setGallery(g => {
+    const ng = [art, ...g].slice(0, 24);
+    try { localStorage.setItem('pip-gallery', JSON.stringify(ng)); } catch (e) {}
+    return ng;
+  });
+  const [muted, setMuted] = useState(false);
+  const todayKey = 'pip-daily-' + new Date().toISOString().slice(0, 10);
+  const [dailyCount, setDailyCount] = useState(() => { try { return parseInt(localStorage.getItem(todayKey) || '0', 10); } catch (e) { return 0; } });
+  const [showKeys, setShowKeys] = useState(false);
+  const [settings, setSettings] = useState(() => {
+    const defaults = { sound: true, music: false, voice: true, motion: true, language: 'en-IN', difficulty: 'normal', limit: true };
+    try { return { ...defaults, ...JSON.parse(localStorage.getItem('pip-settings') || '{}') }; } catch (e) { return defaults; }
+  });
+  useEffect(() => { try { localStorage.setItem('pip-settings', JSON.stringify(settings)); } catch (e) {} }, [settings]);
+
+  const { speak: rawSpeak, speaking } = useSpeech(muted || !settings.voice);
+  const speak = useCallback((text, opts) => rawSpeak(text, opts), [rawSpeak]);
+  const welcomeBack = useWelcomeBack(speak);
+
+  // apply theme/direction/device to the screen container
+  useEffect(() => {
+    const sc = document.querySelector('.device-screen');
+    const dv = document.getElementById('device');
+    document.getElementById('root').setAttribute('data-theme', t.theme);
+    document.getElementById('root').setAttribute('data-direction', t.direction);
+    sc.setAttribute('data-theme', t.theme);
+    sc.setAttribute('data-direction', t.direction);
+    const isTablet = t.device === 'tablet', isWeb = t.device === 'web';
+    dv.classList.toggle('tablet', isTablet);
+    dv.classList.toggle('web', isWeb);
+    document.getElementById('root').classList.toggle('tablet', isTablet);
+    document.getElementById('root').classList.toggle('web', isWeb);
+    document.getElementById('frameLabel').textContent =
+      (isWeb ? 'Web app' : isTablet ? 'Tablet' : 'Phone') + ' · ' + (t.theme === 'dark' ? 'Dark' : 'Light') + ' · ' + (t.direction === 'pop' ? 'Sticker Pop' : 'Cuddle Clay');
+    fitDevice();
+  }, [t.theme, t.direction, t.device]);
+
+  const openCategory = (cat) => {
+    setActiveCat(cat); setRoute('deck');
+    if (settings.sound) { /* tap sfx hook */ }
+    speak(cat.name); announce(cat.name);
+  };
+  const masterCard = (cardId) => {
+    setProgress(p => {
+      const arr = p[activeCat.id] || [];
+      if (arr.includes(cardId)) return p;
+      return { ...p, [activeCat.id]: [...arr, cardId] };
+    });
+    setDailyCount(n => { const v = n + 1; try { localStorage.setItem(todayKey, String(v)); } catch (e) {} return v; });
+    setEarned(e => e.length < 9 && !e.includes('star') ? [...e, ['cat','apple','sun','star','frog'][e.length % 5]] : e);
+  };
+
+  const learnedArr = activeCat ? (progress[activeCat.id] || []) : [];
+  const deckProgress = { learnedSet: new Set(learnedArr) };
+  const progressMap = {};
+  Object.keys(progress).forEach(k => progressMap[k] = { learned: progress[k].length });
+  const lastCategory = Object.keys(progress).slice(-1)[0] || null;
+
+  let screen;
+  if (route === 'onboard') {
+    screen = <Onboarding mascot={t.mascot} speak={speak} onDone={() => { try { localStorage.setItem('pip-onboarded', '1'); } catch (e) {} setRoute('home'); }} />;
+  } else if (route === 'home') {
+    screen = <Home mascot={t.mascot} speak={speak} muted={muted} onToggleMute={() => setMuted(m => !m)}
+      theme={t.theme} onToggletheme={() => setTweak('theme', t.theme === 'dark' ? 'light' : 'dark')}
+      progress={progressMap} lastCategory={lastCategory}
+      onOpenCategory={openCategory} onParent={() => setRoute('parent')} />;
+  } else if (route === 'deck' && activeCat) {
+    screen = <Deck cat={activeCat} cards={CARDS[activeCat.id] || CARDS.animals} mascot={t.mascot}
+      speak={speak} speaking={speaking} muted={muted} progress={deckProgress}
+      onMaster={masterCard} onBack={() => setRoute('home')} onQuiz={() => setRoute('quiz')} />;
+  } else if (route === 'quiz' && activeCat) {
+    screen = <Quiz cat={activeCat} cards={CARDS[activeCat.id] || CARDS.animals} mascot={t.mascot}
+      speak={speak} muted={muted} onBack={() => setRoute('deck')} onRewards={() => setRoute('rewards')} onAgain={() => { setRoute('home'); setTimeout(() => setRoute('quiz'), 30); }} />;
+  } else if (route === 'rewards') {
+    screen = <Rewards mascot={t.mascot} speak={speak} earned={earned} gallery={gallery} onPaint={() => setRoute('paint')}
+      onOpenChest={(s) => setEarned(e => e.includes(s) ? e : [...e, s])} onBack={() => setRoute('home')} />;
+  } else if (route === 'parent') {
+    screen = <Parent mascot={t.mascot} settings={settings} onSetting={(k, v) => setSettings(s => ({ ...s, [k]: v }))} onBack={() => setRoute('home')} />;
+  } else if (route === 'mascot') {
+    screen = <MascotSheet concept={t.mascot} onPick={(c) => setTweak('mascot', c)} onBack={() => setRoute('home')} />;
+  } else if (route === 'paint') {
+    screen = <Paint mascot={t.mascot} speak={speak} isWeb={t.device === 'web'} onBack={() => setRoute('home')}
+      onSaveArt={addArt} onRewards={() => setRoute('rewards')} />;
+  }
+
+  const showNav = ['home', 'rewards', 'mascot', 'paint'].includes(route);
+  const isWeb = t.device === 'web';
+  const useSidebar = isWeb && route !== 'onboard';
+  const resumeCat = activeCat || (lastCategory && CATEGORIES.find(x => x.id === lastCategory)) || null;
+  const goLearn = () => { if (resumeCat) { setActiveCat(resumeCat); setRoute('deck'); } else setRoute('home'); };
+  // shared destinations — identical on mobile bottom-nav and web sidebar
+  const NAV = [
+    { id: 'home',    label: 'Home',      icon: 'home',    active: route === 'home',                       go: () => setRoute('home') },
+    { id: 'learn',   label: 'Learn',     icon: 'play',    active: route === 'deck' || route === 'quiz',   go: goLearn },
+    { id: 'rewards', label: 'Treasures', icon: 'gift',    active: route === 'rewards',                    go: () => setRoute('rewards') },
+    { id: 'paint',   label: 'Paint',     icon: 'palette', active: route === 'paint',                      go: () => setRoute('paint') },
+    { id: 'mascot',  label: 'Buddies',   icon: 'sparkle', active: route === 'mascot',                     go: () => setRoute('mascot') },
+  ];
+  const sidebar = (
+    <aside className="websidebar">
+      <div className="web-logo"><span className="wm-pip">Pip</span><span className="wm-bang">!</span></div>
+      <nav className="webnav">
+        {NAV.map(n => (
+          <button key={n.id} className={`nav-item ${n.active ? 'active' : ''}`} data-testid={`webnav-${n.id}`} onClick={n.go}>
+            <Icon name={n.icon} size={24} />{n.label}
+          </button>
+        ))}
+      </nav>
+      <div className="websidebar-foot">
+        <div className="sb-goal"><DailyGoalRing count={dailyCount} /><small>Today's goal</small></div>
+        <div className="sb-row">
+          <button className="round-btn" aria-label={muted ? 'Turn voice on' : 'Turn voice off'} aria-pressed={muted} onClick={() => setMuted(m => !m)}><Icon name={muted ? 'mute' : 'sound'} size={22} /></button>
+          <button className="round-btn" aria-label="Switch light or dark" onClick={() => setTweak('theme', t.theme === 'dark' ? 'light' : 'dark')}><Icon name={t.theme === 'dark' ? 'sparkle' : 'star'} size={22} /></button>
+        </div>
+        <button className="sb-grown" data-testid="parent-entry" onClick={() => setRoute('parent')}><Icon name="lock" size={20} /> For grown-ups</button>
+      </div>
+    </aside>
+  );
+
+  return (
+    <>
+      {useSidebar ? (
+        <div className="webshell">{sidebar}<main className="webmain">{screen}</main></div>
+      ) : (
+        <>
+          {screen}
+          {!isWeb && showNav && (
+            <nav className="bottom-nav">
+              {NAV.map(n => (
+                <button key={n.id} className={`nav-item ${n.active ? 'active' : ''}`} data-testid={`bottomnav-${n.id}`} onClick={n.go}>
+                  <Icon name={n.icon} size={26} />{n.label}
+                </button>
+              ))}
+            </nav>
+          )}
+        </>
+      )}
+      <CaptionBar />
+      {route === 'home' && !isWeb && <div className="goal-float"><DailyGoalRing count={dailyCount} size={46} /></div>}
+      {(route === 'deck' || route === 'quiz') && (
+        <button className="round-btn key-help-btn" aria-label="Keyboard keys help" data-testid="key-help-btn" onClick={() => setShowKeys(true)}>?</button>
+      )}
+      {showKeys && <KeyHelp onClose={() => setShowKeys(false)} />}
+      <WelcomeBack show={welcomeBack} mascot={t.mascot} />
+      <UpdateToast />
+      <TweaksPanel>
+        <TweakSection label="Visual direction" />
+        <TweakRadio label="Style" value={t.direction} options={['clay', 'pop']}
+          onChange={(v) => setTweak('direction', v)} />
+        <TweakSection label="Theme & device" />
+        <TweakRadio label="Theme" value={t.theme} options={['light', 'dark']} onChange={(v) => setTweak('theme', v)} />
+        <TweakRadio label="Device" value={t.device} options={['web', 'phone', 'tablet']} onChange={(v) => setTweak('device', v)} />
+        <TweakSection label="Mascot" />
+        <TweakSelect label="Buddy" value={t.mascot} options={['pip', 'fox', 'owl', 'bear', 'bunny', 'monster']} onChange={(v) => setTweak('mascot', v)} />
+        <TweakButton label="Replay onboarding" onClick={() => setRoute('onboard')} />
+      </TweaksPanel>
+    </>
+  );
+}
+
+// ---- device fit-to-viewport scaler ----
+function fitDevice() {
+  const scaler = document.getElementById('scaler');
+  const device = document.getElementById('device');
+  if (!scaler || !device) return;
+  scaler.style.transform = 'scale(1)';
+  const rect = device.getBoundingClientRect();
+  const availW = window.innerWidth - 48;
+  const availH = window.innerHeight - 64;
+  const scale = Math.min(1, availW / rect.width, availH / rect.height);
+  scaler.style.transform = `scale(${scale})`;
+}
+window.addEventListener('resize', fitDevice);
+
+// voices may load async
+if ('speechSynthesis' in window) { window.speechSynthesis.onvoiceschanged = () => {}; }
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+setTimeout(fitDevice, 60);
+setTimeout(fitDevice, 400);
+</script>
+</body>
+</html>
