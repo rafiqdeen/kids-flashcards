@@ -2,8 +2,7 @@ import { useState } from 'react';
 import { Icon } from '../components/Icon.jsx';
 import { Illu } from '../art/Illu.jsx';
 import { announce } from '../speech.js';
-
-export const STICKERS = ['cat', 'apple', 'sun', 'star', 'frog', 'fish', 'banana', 'rainbow', 'bee'];
+import { STICKERS } from '../data/stickers.js';
 
 export function Rewards({ onBack, earned, onOpenChest, gallery = [], onPaint, speak }) {
   const [chestState, setChestState] = useState('closed'); // closed | opening | reveal
