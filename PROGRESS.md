@@ -14,7 +14,7 @@ Verification log lives in `VERIFICATION.md` (created in Phase 1+).
 | 4 — Quiz | ✅ done | 19/19 + visual pass; difficulty wired per README |
 | 5 — Rewards + Paint | ✅ done | 36/36 + pixel-match visuals |
 | 6 — Shell extras | ✅ done | 29/29 + visual; real SW toast, real parent stats |
-| 7 — E2E + polish | ⏳ pending | |
+| 7 — E2E + polish | ✅ done | journeys A–H 35/35; 81-shot final sweep; manifest/branding/SW cleanup |
 
 ---
 
@@ -89,4 +89,27 @@ New code goes in these locations; reference file noted in parens.
 
 ## Open diffs
 
-None yet (no UI built).
+None. All phases passed verification with empty diff lists.
+
+## Final report — README-vs-reference discrepancies found
+
+1. **Buttons don't inherit font/color** (reference bug): `.cat-tile` names
+   rendered UA-black — invisible in dark theme. Fixed with a base inherit
+   reset; README AA-contrast precedence.
+2. **Back-face SpeakButton untappable** in flat-rendering/hit-test-culling
+   engines (exactly-180° backface): fixed with 0.6px face Z-separation,
+   per-face pointer-events, and geometry routing in the card click handler.
+   Flip animation unchanged (480ms spring).
+3. **Difficulty setting ignored by the prototype quiz**: README says easy = 2
+   choices — implemented per README.
+4. **Parent "This week" stats hard-coded** in the prototype: implemented with
+   real data (pip-daily, pip-progress); play-time hidden until tracked.
+   Export/Import made functional.
+5. **PWA toast** simulated at 9s in the prototype: wired to the real
+   service-worker waiting state (`useRegisterSW`).
+6. **Reference `vw`-clamp type inside device frames** resolves against the
+   outer viewport — implementation at true viewports is the correct reading.
+7. **Chrome `onend` drops**: speech `speaking` state gets a 500ms engine-poll
+   watchdog so the wave animation can't stick.
+8. **Category counts**: live datasets (e.g. colors=17) over the README table's
+   sample counts, per "counts are live values".

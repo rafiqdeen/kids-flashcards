@@ -137,6 +137,32 @@ Deviations per the do-NOT-replicate list (recorded):
 
 Open diffs: none.
 
+## Phase 7 — Journey matrix + final sweep (PASSED 35/35 + 81-shot sweep)
+
+Automated: `node scripts/verify-phase7.mjs` — all journeys A–H from the brief:
+- A first-run onboarding → Home (`pip-onboarded`)
+- B learn loop ×10 with streak pop at 3, trophy, "Take the quiz"
+- C quiz with one wrong (reveal + spoken correction), results, review, all actions
+- D returning user (continue card, intact state) + >6h welcome-back
+- E chest → sticker book; painting → My art
+- F undo capped at exactly 10 levels, template-switch WIP round-trip
+- G gate, voice-off ⇒ zero utterances (captions still announce), language
+  switch picks the matching TTS voice (verified via a speechSynthesis recorder)
+- H keyboard-only learn pass (Tab/Enter/arrows/Space/Esc), reduced-motion pass,
+  dark-mode pass of learn+rewards, Sticker-Pop pass of learn
+
+Final sweep: `scripts/capture-phase7-sweep.mjs` — 9 screens (onboard, home,
+deck, quiz, rewards, paint, buddies, gate, dashboard) × clay/pop × light/dark
+× web/phone + tablet spot-checks = 81 screenshots in
+`verification-shots/phase7/`, sampled and reviewed (tablet 3-col grid,
+pop-dark phone paint, etc.). Direction/theme variation is token-driven and was
+pixel-validated against the live reference per-screen in earlier phases.
+
+Full regression at finish: phase suites 1–7 all green
+(15/15, 23/23, 40/40, 19/19, 36/36, 29/29, 35/35).
+
+Open diffs: none.
+
 ## Reference discrepancies found & fixed in Phase 2 (README precedence — AA contrast,
 tappable SpeakButton):
 1. **Buttons don't inherit font/color** — reference `.cat-tile` (a `<button>`)

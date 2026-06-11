@@ -9,6 +9,7 @@ const check = (name, ok, detail = '') =>
 
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1180, height: 800 } });
+await page.addInitScript(() => { try { localStorage.setItem('pip-onboarded', '1'); } catch { /* */ } });
 await page.goto(BASE);
 await page.waitForTimeout(500);
 

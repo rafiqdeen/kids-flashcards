@@ -10,6 +10,7 @@ const browser = await chromium.launch();
 
 // ---------- web shell ----------
 let page = await browser.newPage({ viewport: { width: 1180, height: 720 } });
+await page.addInitScript(() => { try { localStorage.setItem('pip-onboarded', '1'); } catch { /* */ } });
 await page.goto(BASE);
 await page.waitForTimeout(600);
 
@@ -112,6 +113,7 @@ await page.close();
 
 // ---------- phone shell ----------
 page = await browser.newPage({ viewport: { width: 390, height: 844 } });
+await page.addInitScript(() => { try { localStorage.setItem('pip-onboarded', '1'); } catch { /* */ } });
 await page.goto(BASE);
 await page.waitForTimeout(600);
 check('phone: bottom nav with 5 items', await page.locator('[data-testid^="bottomnav-"]').count() === 5);

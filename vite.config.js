@@ -10,11 +10,11 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['icons/*.svg', 'icons/*.png'],
       manifest: {
-        name: 'Kids Flash Cards - Learn & Play!',
-        short_name: 'Kids Cards',
-        description: 'Fun flash cards app for kids to learn alphabet, numbers, animals, colors and shapes!',
-        theme_color: '#667eea',
-        background_color: '#fff7ed',
+        name: 'Pip Cards — Learn & Play!',
+        short_name: 'Pip Cards',
+        description: 'Flip cards, spoken words, quizzes, painting and treasures for little learners.',
+        theme_color: '#fff3e2',
+        background_color: '#fff3e2',
         display: 'standalone',
         orientation: 'portrait',
         scope: '/',
@@ -42,62 +42,9 @@ export default defineConfig({
         categories: ['education', 'kids']
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
-        runtimeCaching: [
-          {
-            urlPattern: /^https:\/\/images\.unsplash\.com\/.*/i,
-            handler: 'StaleWhileRevalidate',
-            options: {
-              cacheName: 'unsplash-images',
-              expiration: {
-                maxEntries: 100,
-                maxAgeSeconds: 60 * 60 * 24 * 30
-              },
-              cacheableResponse: {
-                statuses: [0, 200]
-              }
-            }
-          },
-          {
-            urlPattern: /^https:\/\/(loremflickr\.com|live\.staticflickr\.com)\/.*/i,
-            handler: 'StaleWhileRevalidate',
-            options: {
-              cacheName: 'flickr-images',
-              expiration: {
-                maxEntries: 100,
-                maxAgeSeconds: 60 * 60 * 24 * 30
-              },
-              cacheableResponse: {
-                statuses: [0, 200]
-              }
-            }
-          },
-          {
-            urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'google-fonts-stylesheets',
-              expiration: {
-                maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24 * 365
-              }
-            }
-          },
-          {
-            urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'google-fonts-webfonts',
-              expiration: {
-                maxEntries: 20,
-                maxAgeSeconds: 60 * 60 * 24 * 365
-              },
-              cacheableResponse: {
-                statuses: [0, 200]
-              }
-            }
-          }
-        ]
+        // fully offline: all assets (incl. self-hosted Lexend) are local —
+        // no runtime caching of remote origins needed anymore
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}']
       }
     })
   ],
