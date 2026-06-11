@@ -33,6 +33,13 @@ p { margin: 0; color: var(--ink-2); font-size: var(--fs-body); line-height: 1.4;
    (reference-file bug, recorded in VERIFICATION.md). */
 button, select, input { font: inherit; color: inherit; }
 
+/* Parent "Big animations" off — same collapse as prefers-reduced-motion */
+[data-motion="off"] *, [data-motion="off"] *::before, [data-motion="off"] *::after {
+  animation-duration: .001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: .001ms !important;
+}
+
 /* ---------- Focus-visible (global, thick, high-contrast) ---------- */
 :focus { outline: none; }
 button:focus-visible, select:focus-visible, [tabindex]:focus-visible, .flashcard:focus-visible, a:focus-visible {

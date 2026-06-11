@@ -115,6 +115,28 @@ pocket — test fixed, app unchanged.
 
 Open diffs: none.
 
+## Phase 6 — Shell extras (PASSED 29/29 + visual)
+
+Automated: `node scripts/verify-phase6.mjs` — onboarding gating (fresh →
+Onboarding, `pip-onboarded` set, returning → Home), avatar/size/demo-flip
+steps with narration, Buddies sheet (6 concepts × 5 moods, pick persists +
+re-themes), parental gate (wrong → wiggle/coral, ⌫ clears, correct → 250ms
+unlock), working settings (voice/motion/language/difficulty/limit persist and
+gate real behavior; motion off → static celebrate), welcome-back >6h overlay
+with 4.2s auto-dismiss, no simulated PWA toast (real `useRegisterSW` waiting
+state wired). Visual pairs (onboarding/buddies/gate/dashboard) match.
+
+Deviations per the do-NOT-replicate list (recorded):
+- Parent "This week" shows 2 REAL stats (cards learned from `pip-daily-*`,
+  sets started from `pip-progress`); the prototype's hard-coded play-time
+  stat is hidden until time is actually tracked.
+- Export/Import data buttons are functional (JSON download / file restore of
+  `pip-*` keys) instead of the prototype's inert ghosts.
+- Update toast uses the real service-worker `waiting` state, not the 9s timer.
+- `es-ES` stays visible as "(soon)" and selects without voice support (allowed).
+
+Open diffs: none.
+
 ## Reference discrepancies found & fixed in Phase 2 (README precedence — AA contrast,
 tappable SpeakButton):
 1. **Buttons don't inherit font/color** — reference `.cat-tile` (a `<button>`)

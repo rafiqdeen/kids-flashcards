@@ -13,7 +13,7 @@ Verification log lives in `VERIFICATION.md` (created in Phase 1+).
 | 3 — Core loop | ✅ done | 40/40 behavioral + visual pass vs reference; legacy UI deleted |
 | 4 — Quiz | ✅ done | 19/19 + visual pass; difficulty wired per README |
 | 5 — Rewards + Paint | ✅ done | 36/36 + pixel-match visuals |
-| 6 — Shell extras | ⏳ pending | |
+| 6 — Shell extras | ✅ done | 29/29 + visual; real SW toast, real parent stats |
 | 7 — E2E + polish | ⏳ pending | |
 
 ---

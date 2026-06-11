@@ -13,7 +13,8 @@ const makePieces = () =>
   }));
 
 export function Confetti({ show, onDone }) {
-  const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const reduce = (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches)
+    || document.getElementById('root')?.getAttribute('data-motion') === 'off';
   // randomize once per burst (in the effect, not render) so re-renders
   // mid-fall don't reshuffle pieces
   const [pieces, setPieces] = useState([]);

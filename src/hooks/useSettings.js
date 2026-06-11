@@ -42,9 +42,11 @@ export function useSettings() {
     root.classList.add('app-root');
     root.setAttribute('data-theme', settings.theme);
     root.setAttribute('data-direction', settings.direction);
+    // parent "Big animations" toggle — off mirrors prefers-reduced-motion
+    root.setAttribute('data-motion', settings.motion ? 'on' : 'off');
     document.querySelector('meta[name="theme-color"]')
       ?.setAttribute('content', settings.theme === 'dark' ? '#241a13' : '#fff3e2');
-  }, [settings.theme, settings.direction]);
+  }, [settings.theme, settings.direction, settings.motion]);
 
   const setSetting = useCallback((key, value) => {
     setSettings((s) => ({ ...s, [key]: value }));

@@ -1,6 +1,7 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useSettings } from './hooks/useSettings';
 import { useViewport } from './hooks/useViewport';
+import { useSound } from './hooks/useSound';
 import { useSpeech, announce } from './pip/speech.js';
 import { useProgress } from './pip/hooks/useProgress.js';
 import { useDaily } from './pip/hooks/useDaily.js';
@@ -13,9 +14,14 @@ import { Deck } from './pip/screens/Deck.jsx';
 import { Quiz } from './pip/screens/Quiz.jsx';
 import { Rewards } from './pip/screens/Rewards.jsx';
 import { Paint } from './pip/screens/Paint.jsx';
+import { Onboarding } from './pip/screens/Onboarding.jsx';
+import { MascotSheet } from './pip/screens/MascotSheet.jsx';
+import { Parent } from './pip/screens/Parent.jsx';
+import { WelcomeBack } from './pip/components/WelcomeBack.jsx';
+import { useWelcomeBack } from './pip/hooks/useWelcomeBack.js';
+import { UpdateToast } from './pip/components/UpdateToast.jsx';
 import { useEarned } from './pip/hooks/useEarned.js';
 import { useGallery } from './pip/hooks/useGallery.js';
-import { ComingSoon } from './pip/screens/ComingSoon.jsx';
 import { Lab } from './pip/Lab.jsx';
 import { CATEGORIES } from './pip/data/categories.js';
 import { CARDS } from './pip/data/cards.js';
@@ -23,7 +29,13 @@ import { CARDS } from './pip/data/cards.js';
 function App() {
   const { settings, setSetting } = useSettings();
   const device = useViewport();
-  const [route, setRoute] = useState('home');
+  const [route, setRoute] = useState(() => {
+    try {
+      return localStorage.getItem('pip-onboarded') ? 'home' : 'onboard';
+    } catch {
+      return 'onboard';
+    }
+  });
   const [activeCat, setActiveCat] = useState(null);
   const [muted, setMuted] = useState(false);
   const [showKeys, setShowKeys] = useState(false);
@@ -35,21 +47,37 @@ function App() {
 
   // Speech is gated by BOTH the kid mute toggle and the parent voice setting.
   const { speak, speaking } = useSpeech(muted || !settings.voice, settings.language);
+  const { playSound } = useSound();
+  const sfx = useCallback((name) => { if (settings.sound) playSound(name); }, [settings.sound, playSound]);
+  const welcomeBack = useWelcomeBack(speak);
+
+  // gentle screen-time nudge after 20 minutes (parent "limit" setting) — a
+  // spoken/captioned suggestion, never a lock-out
+  useEffect(() => {
+    if (!settings.limit) return;
+    const t = setTimeout(() => {
+      speak('We played a lot! Time for a little stretch?');
+      announce('Time for a little stretch?');
+    }, 20 * 60 * 1000);
+    return () => clearTimeout(t);
+  }, [settings.limit, speak]);
 
   const openCategory = useCallback((cat) => {
     setActiveCat(cat);
     setRoute('deck');
+    sfx('click');
     speak(cat.name);
     announce(cat.name);
-  }, [speak]);
+  }, [speak, sfx]);
 
   const onMaster = useCallback((cardId) => {
     if (activeCat) {
       masterCard(activeCat.id, cardId);
       bumpDaily();
       dripSticker();
+      sfx('celebrate');
     }
-  }, [activeCat, masterCard, bumpDaily, dripSticker]);
+  }, [activeCat, masterCard, bumpDaily, dripSticker, sfx]);
 
   if (window.location.search.includes('pip-lab')) {
     return <Lab />;
@@ -64,7 +92,13 @@ function App() {
   const toggleTheme = () => setSetting('theme', settings.theme === 'dark' ? 'light' : 'dark');
 
   let screen;
-  if (route === 'home') {
+  if (route === 'onboard') {
+    screen = <Onboarding mascot={settings.mascot} speak={speak}
+      onDone={() => {
+        try { localStorage.setItem('pip-onboarded', '1'); } catch { /* private mode */ }
+        setRoute('home');
+      }} />;
+  } else if (route === 'home') {
     screen = <Home mascot={settings.mascot} speak={speak} muted={muted} onToggleMute={() => setMuted((m) => !m)}
       theme={settings.theme} onToggleTheme={toggleTheme}
       progress={progressMap} lastCategory={lastCategory}
@@ -85,9 +119,9 @@ function App() {
     screen = <Paint mascot={settings.mascot} speak={speak}
       onSaveArt={addArt} onRewards={() => setRoute('rewards')} onBack={() => setRoute('home')} />;
   } else if (route === 'mascot') {
-    screen = <ComingSoon title="Buddies" mascot={settings.mascot} onBack={() => setRoute('home')} />;
+    screen = <MascotSheet concept={settings.mascot} onPick={(c) => setSetting('mascot', c)} onBack={() => setRoute('home')} />;
   } else if (route === 'parent') {
-    screen = <ComingSoon title="For grown-ups" mascot={settings.mascot} onBack={() => setRoute('home')} />;
+    screen = <Parent settings={settings} onSetting={setSetting} progress={progress} onBack={() => setRoute('home')} />;
   } else {
     screen = <Home mascot={settings.mascot} speak={speak} muted={muted} onToggleMute={() => setMuted((m) => !m)}
       theme={settings.theme} onToggleTheme={toggleTheme}
@@ -155,6 +189,8 @@ function App() {
         <button className="round-btn key-help-btn" aria-label="Keyboard keys help" data-testid="key-help-btn" onClick={() => setShowKeys(true)}>?</button>
       )}
       {showKeys && <KeyHelp onClose={() => setShowKeys(false)} />}
+      <WelcomeBack show={welcomeBack} mascot={settings.mascot} />
+      <UpdateToast />
     </>
   );
 }
