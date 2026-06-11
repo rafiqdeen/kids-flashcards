@@ -11,6 +11,10 @@ import { KeyHelp } from './pip/components/KeyHelp.jsx';
 import { Home } from './pip/screens/Home.jsx';
 import { Deck } from './pip/screens/Deck.jsx';
 import { Quiz } from './pip/screens/Quiz.jsx';
+import { Rewards } from './pip/screens/Rewards.jsx';
+import { Paint } from './pip/screens/Paint.jsx';
+import { useEarned } from './pip/hooks/useEarned.js';
+import { useGallery } from './pip/hooks/useGallery.js';
 import { ComingSoon } from './pip/screens/ComingSoon.jsx';
 import { Lab } from './pip/Lab.jsx';
 import { CATEGORIES } from './pip/data/categories.js';
@@ -26,6 +30,8 @@ function App() {
   const [quizRun, setQuizRun] = useState(0); // key bump remounts Quiz for "Try again"
   const { progress, masterCard } = useProgress();
   const { dailyCount, bumpDaily } = useDaily();
+  const { earned, addSticker, dripSticker } = useEarned();
+  const { gallery, addArt } = useGallery();
 
   // Speech is gated by BOTH the kid mute toggle and the parent voice setting.
   const { speak, speaking } = useSpeech(muted || !settings.voice, settings.language);
@@ -41,8 +47,9 @@ function App() {
     if (activeCat) {
       masterCard(activeCat.id, cardId);
       bumpDaily();
+      dripSticker();
     }
-  }, [activeCat, masterCard, bumpDaily]);
+  }, [activeCat, masterCard, bumpDaily, dripSticker]);
 
   if (window.location.search.includes('pip-lab')) {
     return <Lab />;
@@ -72,9 +79,11 @@ function App() {
       onBack={() => setRoute('deck')} onRewards={() => setRoute('rewards')}
       onAgain={() => setQuizRun((n) => n + 1)} />;
   } else if (route === 'rewards') {
-    screen = <ComingSoon title="Treasures" mascot={settings.mascot} onBack={() => setRoute('home')} />;
+    screen = <Rewards earned={earned} gallery={gallery} speak={speak}
+      onOpenChest={addSticker} onPaint={() => setRoute('paint')} onBack={() => setRoute('home')} />;
   } else if (route === 'paint') {
-    screen = <ComingSoon title="Paint" mascot={settings.mascot} onBack={() => setRoute('home')} />;
+    screen = <Paint mascot={settings.mascot} speak={speak}
+      onSaveArt={addArt} onRewards={() => setRoute('rewards')} onBack={() => setRoute('home')} />;
   } else if (route === 'mascot') {
     screen = <ComingSoon title="Buddies" mascot={settings.mascot} onBack={() => setRoute('home')} />;
   } else if (route === 'parent') {

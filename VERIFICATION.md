@@ -96,6 +96,25 @@ emoji-disc placeholder fallback for cards without bespoke Illu outlines.
 
 Open diffs: none.
 
+## Phase 5 — Rewards + Paint (PASSED 36/36 + visual)
+
+Automated: `node scripts/verify-phase5.mjs` — chest closed→opening→reveal with
+sticker persisted to `pip-earned`, badges, gallery empty-state → Paint; Paint:
+13 templates, 12 spoken swatches, 4 tools + 3 sizes, marker/rainbow (hue
+cycles along stroke, verified by endpoint colors)/spray/sparkle, 4 stamps,
+eraser (destination-out), 10-level undo, kid-safe clear confirm, magic fill
+bounded by the outline (corner stays clean; enclosed pockets like the cat's
+nose correctly stay unfilled), per-template WIP restore, "I'm done!" →
+480×480 export → `pip-gallery` → framed in My Treasures.
+Visual: Paint + Rewards pairs (clay·light·web) in `verification-shots/phase5/`
+— pixel match.
+
+Test-harness note: three initial "failures" were stale Playwright coordinates
+(toolbar clicks auto-scroll the pane) and a sample point inside the cat-nose
+pocket — test fixed, app unchanged.
+
+Open diffs: none.
+
 ## Reference discrepancies found & fixed in Phase 2 (README precedence — AA contrast,
 tappable SpeakButton):
 1. **Buttons don't inherit font/color** — reference `.cat-tile` (a `<button>`)

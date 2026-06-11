@@ -31,7 +31,6 @@ function buildQuiz(cards, difficulty, n = 10) {
 
 export function Quiz({ cat, cards, onBack, onAgain, onRewards, mascot, speak, difficulty = 'normal' }) {
   // one-shot shuffle per mount — randomness must not re-run on re-render
-  // eslint-disable-next-line react-hooks/purity
   const [quiz] = useState(() => buildQuiz(cards, difficulty));
   const [qi, setQi] = useState(0);
   const [picked, setPicked] = useState(null);
