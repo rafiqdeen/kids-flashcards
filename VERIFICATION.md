@@ -50,7 +50,40 @@ clay/pop × light/dark.
 | SpeakButton | 84px lg per spec, wave state ✅ |
 | Reduced motion | confetti → static "Nice!" banner ✅ |
 
-Reference discrepancies found & fixed (README precedence — AA contrast,
+## Phase 3 — Core loop: Home, Deck, shells, persistence (PASSED 40/40 + visual)
+
+Automated: `node scripts/verify-phase3.mjs` (40 behavioral checks — shells,
+deck flow, mastery, streaks, trophy, keyboard, key-help, persistence,
+legacy-progress migration). Visual: `scripts/capture-phase3-visual.mjs`
+captured reference (`Pip Cards v2.html`, served per-combo via rewritten
+`TWEAK_DEFAULTS`) vs implementation for Home + Deck in clay/pop × light/dark ×
+web/phone — 32 shots in `verification-shots/phase3/`, reviewed region by region.
+
+| Pair reviewed | Verdict |
+|---|---|
+| Home clay·light·web | match (sidebar geometry, hero, tiles, foot) |
+| Deck clay·light·web | match; content diffs only (46-card live dataset vs 6-card reference sample) |
+| Home pop·dark·phone | match (stroke+rim tiles, bottom nav, goal float) |
+| Deck pop·light·web | match (sticker outlines, offset shadows) |
+
+Accepted diff-noise (recorded, not deviations):
+- Reference device frames render `vw`-based `clamp()` type against the outer
+  browser viewport, inflating hero h1 inside the 390px frame; at a real 390px
+  viewport the implementation's size is the correct reading of the tokens.
+- Card order/count comes from live datasets (Phase 0 decision #9); reference
+  shows sample sets.
+- One reference capture includes its simulated PWA toast (9s timer) — excluded
+  by the do-NOT-replicate list; real `waiting`-worker toast lands in Phase 6.
+
+Fixes made during verification:
+- Ported the reference HTML's `html, body { height: 100% }` shell rule
+  (missing → sidebar footer fell below the fold; webmain wasn't its own
+  scroll container).
+- `openCategory` now announces to the caption bar (was speak-only).
+
+Open diffs: none.
+
+## Reference discrepancies found & fixed in Phase 2 (README precedence — AA contrast,
 tappable SpeakButton):
 1. **Buttons don't inherit font/color** — reference `.cat-tile` (a `<button>`)
    renders UA-black tile names, invisible in dark theme. Added

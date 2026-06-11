@@ -1,0 +1,56 @@
+/* ============================================================
+   PIP CARDS — app shell (ported from the reference HTML shell).
+   Web ≥900px: 236px sidebar + scrollable main. Phone: top bar +
+   bottom nav. Breakpoint classes (web/tablet) come from useViewport.
+   ============================================================ */
+
+/* viewport-locked app: the shell fills the window; main pane scrolls */
+html, body, #root { height: 100%; }
+#root { overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
+
+/* ---- bottom nav (phone) ---- */
+.bottom-nav {
+  position: sticky; bottom: 0; z-index: 50; display: flex; justify-content: space-around;
+  padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+  background: color-mix(in oklab, var(--surface) 88%, transparent);
+  border-top: 1px solid var(--surface-3);
+}
+.nav-item {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  background: none; border: none; cursor: pointer;
+  color: var(--ink-3); font-family: var(--font); font-weight: var(--fw-bold); font-size: 12px;
+  padding: 6px 16px; border-radius: var(--r-md); min-width: 60px;
+}
+.nav-item.active { color: var(--cat-fruits-1); background: color-mix(in oklab, var(--cat-fruits-1) 14%, transparent); }
+
+/* ---- web shell (sidebar + main) ---- */
+.webshell { display: flex; height: 100%; }
+.websidebar {
+  width: 236px; flex-shrink: 0; background: var(--surface);
+  border-right: 1px solid var(--surface-3);
+  display: flex; flex-direction: column; padding: 22px 16px; gap: 6px;
+}
+.web-logo { font-weight: var(--fw-black); font-size: 32px; margin: 4px 10px 20px; line-height: 1; }
+.webnav { display: flex; flex-direction: column; gap: 6px; flex: 1; }
+.websidebar .nav-item {
+  flex-direction: row; justify-content: flex-start; gap: 14px; width: 100%;
+  font-size: 16px; padding: 14px 16px; border-radius: 16px; min-width: 0;
+}
+.websidebar-foot { display: flex; flex-direction: column; gap: 10px; }
+.sb-goal { display: flex; align-items: center; gap: 10px; padding: 0 10px; color: var(--ink-2); font-weight: var(--fw-bold); font-size: 13px; }
+.sb-grown {
+  display: flex; align-items: center; gap: 12px;
+  font-family: var(--font); font-weight: var(--fw-bold); font-size: 15px; color: var(--ink-2);
+  background: var(--rose); border: none; border-radius: 16px; padding: 13px 16px; cursor: pointer;
+}
+.sb-row { display: flex; gap: 8px; }
+.sb-row .round-btn { flex: 1; }
+.webmain { flex: 1; overflow-y: auto; min-width: 0; }
+
+/* web layout overrides */
+.web .screen { max-width: 1060px; margin-inline: auto; width: 100%; }
+.web .cat-grid { grid-template-columns: repeat(4, 1fr); }
+.web .home-bar { display: none; }
+.web .quiz-grid { grid-template-columns: repeat(4, 1fr); max-width: 840px; margin-inline: auto; }
+.web .quiz-opt { min-height: 150px; }
+.web .home-hero { margin-top: var(--s-5); }

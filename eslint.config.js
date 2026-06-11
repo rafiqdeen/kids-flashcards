@@ -5,7 +5,9 @@ import reactRefresh from 'eslint-plugin-react-refresh'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist']),
+  // design_handoff_pip_cards holds the design-reference prototypes (Babel-in-
+  // browser, window globals) — reference material, not app code.
+  globalIgnores(['dist', 'design_handoff_pip_cards']),
   {
     files: ['**/*.{js,jsx}'],
     extends: [

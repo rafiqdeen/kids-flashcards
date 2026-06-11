@@ -10,7 +10,7 @@ Verification log lives in `VERIFICATION.md` (created in Phase 1+).
 | 0 — Audit & plan | ✅ done | This document |
 | 1 — Foundations | ✅ done | 15/15 checks; see VERIFICATION.md |
 | 2 — Primitives | ✅ done | 23/23 checks; new code under `src/pip/` |
-| 3 — Core loop | ⏳ pending | |
+| 3 — Core loop | ✅ done | 40/40 behavioral + visual pass vs reference; legacy UI deleted |
 | 4 — Quiz | ⏳ pending | |
 | 5 — Rewards + Paint | ⏳ pending | |
 | 6 — Shell extras | ⏳ pending | |
@@ -71,6 +71,21 @@ New code goes in these locations; reference file noted in parens.
 3. **Quiz "Learn" nav target:** resumes `activeCat`, else `pip-progress` last non-empty category, else Home (README §Routes).
 4. **Gallery storage:** localStorage with try/catch + cap 24 for v1 (no IndexedDB wrapper exists in codebase); revisit if quota errors observed in Phase 5 verification.
 5. **Tooling added for the verification protocol:** Playwright + pixelmatch as devDependencies (screenshots of reference vs implementation). Justified by the prompt; not shipped to prod bundle.
+
+### Phase 3 decisions
+
+6. New code lives under `src/pip/` (screens/components/hooks/data/art) rather
+   than scattered through `src/components` — keeps the redesign cohesive while
+   legacy was being removed. Legacy components/hooks/styles deleted this phase.
+7. Routes for later phases (quiz, rewards, paint, buddies, parent) render a
+   kid-safe `ComingSoon` screen until their phase lands; onboarding gating
+   arrives with Phase 6.
+8. `CATEGORIES.count` derives from live datasets (e.g. colors is 17 in data,
+   not the README's 9) — README "counts reflect live values" precedence.
+9. Card adapter (`src/pip/data/cards.js`) reshapes all 12 legacy datasets to
+   the reference card contract; ids preserved so migrated progress matches.
+   Cards without bespoke Illu art render the emoji disc fallback (swappable
+   art layer per Fidelity note). Remote image URLs are no longer used anywhere.
 
 ## Open diffs
 

@@ -73,7 +73,7 @@ export function useSound() {
         }
         break;
 
-      case 'celebrate':
+      case 'celebrate': {
         // Victory fanfare
         const notes = [523, 659, 784, 1047]; // C5, E5, G5, C6
         notes.forEach((freq, i) => {
@@ -88,6 +88,7 @@ export function useSound() {
           }
         }, 600);
         break;
+      }
 
       case 'click':
         playTone(500, 0.05, 'sine', 0.1);
@@ -121,13 +122,14 @@ export function useSound() {
         setTimeout(() => playTone(500, 0.12, 'sine', 0.1), 150);
         break;
 
-      case 'streak':
+      case 'streak': {
         // Streak achievement sound
         const streakNotes = [440, 554, 659, 880];
         streakNotes.forEach((freq, i) => {
           setTimeout(() => playTone(freq, 0.15, 'sine', 0.18), i * 80);
         });
         break;
+      }
 
       default:
         break;
