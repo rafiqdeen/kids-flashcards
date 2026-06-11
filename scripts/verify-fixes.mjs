@@ -2,14 +2,15 @@
 // 1) Learn tab opens a deck even with no progress
 // 2) consistent native emoji on cards (no SVG-vs-tiny-emoji mixing, no pink discs)
 // 3) speech sets lang + prefers an offline (audible) voice
-import { chromium } from '@playwright/test';
+import * as pw from '@playwright/test';
+const PW = pw[process.env.PWBROWSER || 'chromium'];
 
 const BASE = process.env.BASE_URL || 'http://localhost:4173';
 const results = [];
 const check = (name, ok, detail = '') =>
   results.push({ name, ok }) && console.log(`${ok ? 'PASS' : 'FAIL'}  ${name}${detail ? ' — ' + detail : ''}`);
 
-const browser = await chromium.launch();
+const browser = await PW.launch();
 const page = await browser.newPage({ viewport: { width: 1180, height: 800 } });
 await page.addInitScript(() => {
   localStorage.setItem('pip-onboarded', '1');

@@ -42,7 +42,7 @@ function warmVoices() {
 }
 warmVoices();
 
-function pickVoice(language) {
+export function pickVoice(language) {
   const vs = window.speechSynthesis.getVoices();
   if (!vs.length) return null;
   const want = language.toLowerCase();

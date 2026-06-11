@@ -1,5 +1,30 @@
 # VERIFICATION — Pip Cards redesign
 
+## Latest full E2E run (production build, cross-browser)
+
+Build: `npm run build` → served via `vite preview` (:4173, includes the PWA SW).
+
+| Suite | Chromium | WebKit (Safari engine) |
+|---|---|---|
+| Phase 1 — foundations | 15/15 | — |
+| Phase 2 — primitives | 23/23 | — |
+| Phase 3 — Home/Deck/persistence | 40/40 | — |
+| Phase 4 — Quiz | 19/19 | — |
+| Phase 5 — Rewards + Paint | 36/36 | — |
+| Phase 6 — shell extras | 29/29 | — |
+| Phase 7 — journeys A–H | 35/35 | 30/30 |
+| Fixes (Learn/emoji/speech) | 17/17 | 17/17 |
+| **Total** | **214/214** | **47/47** |
+
+WebKit phase7 = 30 (vs 35) because the Tab-focus keyboard pass is skipped on
+WebKit headless — macOS only Tab-focuses form controls unless "Full Keyboard
+Access" is enabled (an OS setting, not an app issue); deck keys (←/→/Space/Esc)
+are still exercised. Run cross-browser with `PWBROWSER=webkit node scripts/...`.
+
+---
+
+
+
 Per-phase verification log. Protocol: reference screenshot vs implementation
 screenshot, region-by-region; behavioral checks driven through the real UI.
 Mismatches listed as `screen / state / viewport / expected vs actual`; phase is

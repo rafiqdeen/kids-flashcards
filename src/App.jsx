@@ -23,6 +23,7 @@ import { UpdateToast } from './pip/components/UpdateToast.jsx';
 import { useEarned } from './pip/hooks/useEarned.js';
 import { useGallery } from './pip/hooks/useGallery.js';
 import { Lab } from './pip/Lab.jsx';
+import { SpeechDebug } from './pip/SpeechDebug.jsx';
 import { CATEGORIES } from './pip/data/categories.js';
 import { CARDS } from './pip/data/cards.js';
 
@@ -81,6 +82,9 @@ function App() {
 
   if (window.location.search.includes('pip-lab')) {
     return <Lab />;
+  }
+  if (window.location.search.includes('pipdebug')) {
+    return <SpeechDebug />;
   }
 
   const learnedArr = activeCat ? (progress[activeCat.id] || []) : [];
