@@ -11,7 +11,7 @@ Verification log lives in `VERIFICATION.md` (created in Phase 1+).
 | 1 — Foundations | ✅ done | 15/15 checks; see VERIFICATION.md |
 | 2 — Primitives | ✅ done | 23/23 checks; new code under `src/pip/` |
 | 3 — Core loop | ✅ done | 40/40 behavioral + visual pass vs reference; legacy UI deleted |
-| 4 — Quiz | ⏳ pending | |
+| 4 — Quiz | ✅ done | 19/19 + visual pass; difficulty wired per README |
 | 5 — Rewards + Paint | ⏳ pending | |
 | 6 — Shell extras | ⏳ pending | |
 | 7 — E2E + polish | ⏳ pending | |

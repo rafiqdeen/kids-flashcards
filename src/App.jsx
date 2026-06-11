@@ -10,6 +10,7 @@ import { DailyGoalRing } from './pip/components/DailyGoalRing.jsx';
 import { KeyHelp } from './pip/components/KeyHelp.jsx';
 import { Home } from './pip/screens/Home.jsx';
 import { Deck } from './pip/screens/Deck.jsx';
+import { Quiz } from './pip/screens/Quiz.jsx';
 import { ComingSoon } from './pip/screens/ComingSoon.jsx';
 import { Lab } from './pip/Lab.jsx';
 import { CATEGORIES } from './pip/data/categories.js';
@@ -22,6 +23,7 @@ function App() {
   const [activeCat, setActiveCat] = useState(null);
   const [muted, setMuted] = useState(false);
   const [showKeys, setShowKeys] = useState(false);
+  const [quizRun, setQuizRun] = useState(0); // key bump remounts Quiz for "Try again"
   const { progress, masterCard } = useProgress();
   const { dailyCount, bumpDaily } = useDaily();
 
@@ -65,7 +67,10 @@ function App() {
       speak={speak} speaking={speaking} progress={deckProgress}
       onMaster={onMaster} onBack={() => setRoute('home')} onQuiz={() => setRoute('quiz')} />;
   } else if (route === 'quiz' && activeCat) {
-    screen = <ComingSoon title="Quiz" mascot={settings.mascot} onBack={() => setRoute('deck')} />;
+    screen = <Quiz key={quizRun} cat={activeCat} cards={CARDS[activeCat.id] || []} mascot={settings.mascot}
+      speak={speak} difficulty={settings.difficulty}
+      onBack={() => setRoute('deck')} onRewards={() => setRoute('rewards')}
+      onAgain={() => setQuizRun((n) => n + 1)} />;
   } else if (route === 'rewards') {
     screen = <ComingSoon title="Treasures" mascot={settings.mascot} onBack={() => setRoute('home')} />;
   } else if (route === 'paint') {

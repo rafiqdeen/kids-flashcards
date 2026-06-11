@@ -83,6 +83,19 @@ Fixes made during verification:
 
 Open diffs: none.
 
+## Phase 4 — Quiz (PASSED 19/19 + visual)
+
+Automated: `node scripts/verify-phase4.mjs` — question flow, one-attempt rule,
+correct/wrong/reveal/disabled states with distinct ✓/✗ marks, 850/1500ms
+advance, results (score, ≥70% "Amazing!"), mistake review (role=button row +
+inner speak button), three actions, "Try again" remount, easy difficulty = 2
+choices (README spec; reference prototype ignored difficulty — implemented per
+README and recorded). Visual: quiz + results pairs (clay·light·web) in
+`verification-shots/phase4/` — match; option-art diffs are the documented
+emoji-disc placeholder fallback for cards without bespoke Illu outlines.
+
+Open diffs: none.
+
 ## Reference discrepancies found & fixed in Phase 2 (README precedence — AA contrast,
 tappable SpeakButton):
 1. **Buttons don't inherit font/color** — reference `.cat-tile` (a `<button>`)
