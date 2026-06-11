@@ -61,6 +61,18 @@ function importData(onDone) {
   input.click();
 }
 
+function Toggle({ name, label, desc, settings, onSetting }) {
+  return (
+    <div className="set-row">
+      <div className="set-text"><b>{label}</b>{desc && <small>{desc}</small>}</div>
+      <button data-testid={`settings-toggle-${name}`} className={`switch ${settings[name] ? 'on' : ''}`}
+        role="switch" aria-checked={!!settings[name]} aria-label={label} onClick={() => onSetting(name, !settings[name])}>
+        <span className="knob" />
+      </button>
+    </div>
+  );
+}
+
 export function Parent({ onBack, settings, onSetting, progress }) {
   const [gate, setGate] = useState(true);
   // problem regenerates each time the gate opens (component mounts per visit)
@@ -95,15 +107,8 @@ export function Parent({ onBack, settings, onSetting, progress }) {
   }
 
   const stats = weekStats(progress);
-
-  const Toggle = ({ name, label, desc }) => (
-    <div className="set-row">
-      <div className="set-text"><b>{label}</b>{desc && <small>{desc}</small>}</div>
-      <button data-testid={`settings-toggle-${name}`} className={`switch ${settings[name] ? 'on' : ''}`}
-        role="switch" aria-checked={!!settings[name]} aria-label={label} onClick={() => onSetting(name, !settings[name])}>
-        <span className="knob" />
-      </button>
-    </div>
+  const toggle = (name, label, desc) => (
+    <Toggle name={name} label={label} desc={desc} settings={settings} onSetting={onSetting} />
   );
 
   return (
@@ -124,10 +129,10 @@ export function Parent({ onBack, settings, onSetting, progress }) {
 
       <h2 className="shelf-title">Settings</h2>
       <div className="set-list">
-        <Toggle name="sound" label="Sound effects" desc="Taps, flips, wins" />
-        <Toggle name="music" label="Background music" />
-        <Toggle name="voice" label="Spoken words" desc="Pip reads aloud" />
-        <Toggle name="motion" label="Big animations" desc="Off = calmer, less motion" />
+        {toggle('sound', 'Sound effects', 'Taps, flips, wins')}
+        {toggle('music', 'Background music')}
+        {toggle('voice', 'Spoken words', 'Pip reads aloud')}
+        {toggle('motion', 'Big animations', 'Off = calmer, less motion')}
         <div className="set-row">
           <div className="set-text"><b>Voice language</b><small>Pip&apos;s accent</small></div>
           <select className="set-select" data-testid="settings-toggle-language" value={settings.language}
@@ -145,7 +150,7 @@ export function Parent({ onBack, settings, onSetting, progress }) {
             <option value="normal">Normal (4 choices)</option>
           </select>
         </div>
-        <Toggle name="limit" label="Screen-time reminder" desc="Gentle nudge after 20 min" />
+        {toggle('limit', 'Screen-time reminder', 'Gentle nudge after 20 min')}
       </div>
 
       <div className="dash-actions">

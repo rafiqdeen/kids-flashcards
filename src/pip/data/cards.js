@@ -16,15 +16,9 @@ import { bodyParts } from '../../data/bodyParts';
 import { weather } from '../../data/weather';
 import { emotions } from '../../data/emotions';
 
-// ids with bespoke chunky-SVG art in Illu
-const ILLU = new Set([
-  'apple', 'banana', 'carrot', 'broccoli', 'cat', 'dog', 'lion', 'elephant',
-  'frog', 'fish', 'bee', 'parrot', 'car', 'bus', 'sun', 'cloud', 'rainbow',
-  'hand', 'happy', 'sad', 'circle', 'square', 'triangle', 'star', 'heart',
-]);
-
-const illuOr = (id, emoji) =>
-  ILLU.has(id) ? { name: id } : { name: 'fallback', char: emoji };
+// Shape ids that have a clean geometric SVG in Illu; other shapes fall back to
+// their native emoji. (Photo-style categories all render native emoji now.)
+const SHAPE_SVG = new Set(['circle', 'square', 'triangle', 'star', 'heart']);
 
 const cleanSound = (s) => (s || '').replace(/!+$/, '');
 
@@ -34,7 +28,7 @@ const CARDS = {
     front: { kind: 'mega', text: c.letter, char: c.emoji },
     word: c.word,
     badge: { label: `${c.letter} is for ${c.word}`, icon: 'tag' },
-    illu: ILLU.has(c.word.toLowerCase()) ? c.word.toLowerCase() : 'fallback',
+    illu: 'emoji', // card back shows the word's realistic emoji
     phrase: `${c.letter} is for ${c.word}.`,
   })),
   numbers: numbers.map((c) => ({
@@ -46,7 +40,7 @@ const CARDS = {
   })),
   animals: animals.map((c) => ({
     id: c.id,
-    front: { kind: 'illu', ...illuOr(c.id, c.emoji) },
+    front: { kind: 'emoji', char: c.emoji },
     word: c.name,
     badge: c.sound
       ? { label: `Says “${cleanSound(c.sound)}”`, icon: 'sound' }
@@ -55,21 +49,21 @@ const CARDS = {
   })),
   fruits: fruits.map((c) => ({
     id: c.id,
-    front: { kind: 'illu', ...illuOr(c.id, c.emoji) },
+    front: { kind: 'emoji', char: c.emoji },
     word: c.name,
     badge: { label: c.hint, icon: 'tag' },
     phrase: `${c.name}.`,
   })),
   vegetables: vegetables.map((c) => ({
     id: c.id,
-    front: { kind: 'illu', ...illuOr(c.id, c.emoji) },
+    front: { kind: 'emoji', char: c.emoji },
     word: c.name,
     badge: { label: c.hint, icon: 'tag' },
     phrase: `${c.name}.`,
   })),
   birds: birds.map((c) => ({
     id: c.id,
-    front: { kind: 'illu', ...illuOr(c.id, c.emoji) },
+    front: { kind: 'emoji', char: c.emoji },
     word: c.name,
     badge: c.sound
       ? { label: `Says “${cleanSound(c.sound)}”`, icon: 'sound' }
@@ -85,37 +79,37 @@ const CARDS = {
   })),
   shapes: shapes.map((c) => ({
     id: c.id,
-    front: ILLU.has(c.id)
+    front: SHAPE_SVG.has(c.id)
       ? { kind: 'shape', name: c.id }
-      : { kind: 'illu', name: 'fallback', char: c.emoji },
+      : { kind: 'emoji', char: c.emoji },
     word: c.name,
     badge: { label: c.sides > 0 ? `${c.sides} sides` : c.description, icon: 'info' },
     phrase: `${c.name}.`,
   })),
   vehicles: vehicles.map((c) => ({
     id: c.id,
-    front: { kind: 'illu', ...illuOr(c.id, c.emoji) },
+    front: { kind: 'emoji', char: c.emoji },
     word: c.name,
     badge: { label: `Says “${cleanSound(c.sound)}”`, icon: 'sound' },
     phrase: `${c.name}. ${cleanSound(c.sound)}.`,
   })),
   body: bodyParts.map((c) => ({
     id: c.id,
-    front: { kind: 'illu', ...illuOr(c.id, c.emoji) },
+    front: { kind: 'emoji', char: c.emoji },
     word: c.name,
     badge: { label: c.action, icon: 'info' },
     phrase: `${c.name}.`,
   })),
   weather: weather.map((c) => ({
     id: c.id,
-    front: { kind: 'illu', ...illuOr(c.id, c.emoji) },
+    front: { kind: 'emoji', char: c.emoji },
     word: c.name,
     badge: { label: c.description, icon: 'info' },
     phrase: `${c.name}.`,
   })),
   emotions: emotions.map((c) => ({
     id: c.id,
-    front: { kind: 'illu', ...illuOr(c.id, c.emoji) },
+    front: { kind: 'emoji', char: c.emoji },
     word: c.name,
     badge: { label: c.feeling, icon: 'info' },
     phrase: `${c.name}.`,

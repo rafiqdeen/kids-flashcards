@@ -19,9 +19,10 @@ function CardBack({ card, catColor, onSpeak, speaking }) {
     <div className="card-back-inner">
       <div className="card-back-visual" style={{ color: `var(--cat-${catColor}-1)` }}>
         {backIllu ? <Illu name={backIllu} char={card.front.char} size={120} />
-          : card.front.kind === 'swatch' ? <Illu name="swatch" hex={card.front.hex} size={110} />
-            : card.front.kind === 'shape' ? <Illu name={card.front.name} size={110} />
-              : <div className="card-mega sm">{card.front.text}</div>}
+          : card.front.kind === 'emoji' ? <Illu name="emoji" char={card.front.char} size={120} />
+            : card.front.kind === 'swatch' ? <Illu name="swatch" hex={card.front.hex} size={110} />
+              : card.front.kind === 'shape' ? <Illu name={card.front.name} size={110} />
+                : <div className="card-mega sm">{card.front.text}</div>}
       </div>
       <div className="card-word">{card.word}</div>
       {card.badge && (

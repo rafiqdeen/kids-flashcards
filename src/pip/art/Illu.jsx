@@ -6,6 +6,14 @@ const S = '#3a2a1d'; // friendly dark stroke
 const sw = 3.4;
 
 export function Illu({ name, hex, char, size = 84 }) {
+  // Native color emoji — used for all photo-style cards so every card in a
+  // deck/strip renders the same realistic style (no SVG-vs-tiny-emoji mixing).
+  if (name === 'emoji') {
+    return (
+      <span className="illu-emoji" role="img" aria-hidden="true"
+        style={{ fontSize: size, lineHeight: 1, display: 'inline-block' }}>{char}</span>
+    );
+  }
   const wrap = (kids) => (
     <svg viewBox="0 0 100 100" width={size} height={size} aria-hidden="true"
       style={{ overflow: 'visible', display: 'block' }}>{kids}</svg>
@@ -42,6 +50,15 @@ export function Illu({ name, hex, char, size = 84 }) {
     case 'hand': return wrap(<g><defs><linearGradient id="g_ha" x1="0" y1="0" x2="0.4" y2="1"><stop offset="0%" stopColor="#fde68a" /><stop offset="100%" stopColor="#f59e0b" /></linearGradient></defs><g fill="url(#g_ha)" stroke="#b45309" strokeWidth="2.5" strokeLinejoin="round"><rect x="33" y="38" width="34" height="44" rx="15" /><rect x="33" y="28" width="8" height="22" rx="4" /><rect x="44" y="20" width="8" height="30" rx="4" /><rect x="54" y="22" width="8" height="28" rx="4" /><rect x="63" y="30" width="8" height="20" rx="4" /></g><path d="M40 48 q10 -4 20 0" fill="none" stroke="#fff" strokeWidth="2.5" strokeOpacity="0.5" strokeLinecap="round" /></g>);
     case 'happy': return wrap(<g><defs><radialGradient id="g_hp" cx="42%" cy="34%" r="72%"><stop offset="0%" stopColor="#fef08a" /><stop offset="60%" stopColor="#fbbf24" /><stop offset="100%" stopColor="#f59e0b" /></radialGradient></defs><circle cx="50" cy="50" r="34" fill="url(#g_hp)" stroke="#d97706" strokeWidth="2.5" /><ellipse cx="42" cy="40" rx="10" ry="7" fill="#fff" opacity="0.3" /><circle cx="40" cy="44" r="4.5" fill={S} /><circle cx="60" cy="44" r="4.5" fill={S} />{blush(34)}{blush(66)}<path d="M36 58 q14 18 28 0" fill="none" stroke={S} strokeWidth="4" strokeLinecap="round" /></g>);
     case 'sad': return wrap(<g><defs><radialGradient id="g_sd" cx="42%" cy="34%" r="72%"><stop offset="0%" stopColor="#bfdbfe" /><stop offset="60%" stopColor="#93c5fd" /><stop offset="100%" stopColor="#60a5fa" /></radialGradient></defs><circle cx="50" cy="50" r="34" fill="url(#g_sd)" stroke="#3b82f6" strokeWidth="2.5" /><ellipse cx="42" cy="40" rx="10" ry="7" fill="#fff" opacity="0.3" /><circle cx="40" cy="46" r="4.5" fill={S} /><circle cx="60" cy="46" r="4.5" fill={S} /><path d="M36 66 q14 -14 28 0" fill="none" stroke={S} strokeWidth="4" strokeLinecap="round" /><path d="M38 54 q-2 8 2 11 q4 -3 2 -11Z" fill="#38bdf8" /></g>);
-    default: return wrap(<g><circle cx="50" cy="50" r="34" fill="currentColor" {...st} opacity="0.9" /><text x="50" y="50" dy=".35em" textAnchor="middle" fontFamily="var(--font)" fontWeight="800" fontSize="34" fill="#fff">{(char || '?')}</text></g>);
+    // Unknown name with an emoji char → render it natively (not a tiny glyph
+    // on a colored disc). Falls back to a "?" disc only when there's no char.
+    default:
+      if (char) {
+        return (
+          <span className="illu-emoji" role="img" aria-hidden="true"
+            style={{ fontSize: size, lineHeight: 1, display: 'inline-block' }}>{char}</span>
+        );
+      }
+      return wrap(<g><circle cx="50" cy="50" r="34" fill="currentColor" {...st} opacity="0.9" /><text x="50" y="50" dy=".35em" textAnchor="middle" fontFamily="var(--font)" fontWeight="800" fontSize="34" fill="#fff">?</text></g>);
   }
 }

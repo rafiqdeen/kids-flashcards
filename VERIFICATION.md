@@ -137,6 +137,36 @@ Deviations per the do-NOT-replicate list (recorded):
 
 Open diffs: none.
 
+## Post-launch fixes — Learn tab, emoji consistency, speech audio (PASSED 17/17)
+
+User-reported on the running app; `node scripts/verify-fixes.mjs`:
+1. **Learn tab dead with no progress** — `goLearn` fell back to Home when there
+   was no active/last category, so clicking Learn on Home did nothing. Now
+   resumes the active/last category, else opens the first (Alphabet). Always
+   opens a deck.
+2. **Mixed art (big bespoke SVG vs tiny emoji-on-pink-disc)** — photo-style
+   categories (animals/fruits/vegetables/birds/vehicles/body/weather/emotions)
+   now render the dataset's **native color emoji** uniformly via a new
+   `Illu name="emoji"` path (HTML span, full-size). Alphabet keeps the mega
+   letter front + emoji back; numbers keep the mega number; colors keep
+   swatches; shapes keep geometric SVG for circle/square/triangle/star and
+   native emoji for the rest. Verified: 0 pink-disc fallbacks; every thumb +
+   front + back renders the realistic emoji. (Also fixed: emoji card *backs*
+   were blank — `CardBack` didn't handle `kind:'emoji'`.)
+3. **No speech audio anywhere** — the engine reported `speaking=true` but
+   `u.lang` was never set and voice selection could lock onto a remote/enhanced
+   OS voice (e.g. macOS "Rishi" en-IN) that emits no audio until downloaded.
+   Now: prefer `localService` (offline) voices matching the language, then any
+   offline English, then remote matches; always set `u.lang`; call
+   `speechSynthesis.resume()` after speak (Chrome can leave synthesis paused →
+   silent). Voice-pick + lang verified through the real SpeakButton.
+
+Decision: home-screen category tiles keep their single bespoke icon (internally
+consistent per-grid); only card surfaces switched to emoji. Easy to flip tiles
+to emoji too if desired.
+
+Regression: phase suites 2–7 all still green after the change.
+
 ## Phase 7 — Journey matrix + final sweep (PASSED 35/35 + 81-shot sweep)
 
 Automated: `node scripts/verify-phase7.mjs` — all journeys A–H from the brief:

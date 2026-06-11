@@ -37,23 +37,39 @@ export function useSpeech(disabled, language = 'en-IN') {
 
   const speak = useCallback((text, opts = {}) => {
     if (disabled || !text || !('speechSynthesis' in window)) return;
+    const synth = window.speechSynthesis;
     try {
-      window.speechSynthesis.cancel(); // prevent queue pileup from rapid taps
+      synth.cancel(); // prevent queue pileup from rapid taps
       const u = new SpeechSynthesisUtterance(text);
       u.rate = opts.rate ?? 0.7;
       u.pitch = opts.pitch ?? 1.3;
-      const vs = window.speechSynthesis.getVoices();
-      const v = vs.find((x) => x.lang?.toLowerCase().startsWith(language.toLowerCase()))
-        || vs.find((x) => /en/i.test(x.lang));
-      if (v) u.voice = v;
+
+      // Voice pick must prefer OFFLINE (localService) voices. Remote/enhanced
+      // OS voices (e.g. macOS "Rishi" en-IN) report speaking=true but emit no
+      // audio until downloaded — the cause of "no sound anywhere". Order:
+      // local match-language → local English → remote match-language → any en.
+      const vs = synth.getVoices();
+      const want = language.toLowerCase();
+      const matchLang = (v) => v.lang && v.lang.toLowerCase().startsWith(want);
+      const isEn = (v) => /^en/i.test(v.lang || '');
+      const v =
+        vs.find((x) => matchLang(x) && x.localService) ||
+        vs.find((x) => isEn(x) && x.localService) ||
+        vs.find(matchLang) ||
+        vs.find(isEn) ||
+        vs.find((x) => x.localService) ||
+        vs[0] || null;
+      if (v) { u.voice = v; u.lang = v.lang; } else { u.lang = language; }
+
       u.onstart = () => setSpeaking(true);
       u.onend = () => setSpeaking(false);
       u.onerror = () => setSpeaking(false);
-      window.speechSynthesis.speak(u);
+      synth.speak(u);
+      synth.resume(); // Chrome can leave synthesis paused → silent; unpause it
       // Chrome occasionally drops onend (and headless never fires it) —
       // poll the engine and clear the wave state when it actually stops.
       const guard = setInterval(() => {
-        if (!window.speechSynthesis.speaking) {
+        if (!synth.speaking) {
           setSpeaking(false);
           clearInterval(guard);
         }

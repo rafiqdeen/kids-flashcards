@@ -132,8 +132,10 @@ function App() {
   const showNav = ['home', 'rewards', 'mascot', 'paint'].includes(route);
   const isWeb = device === 'web';
   const useSidebar = isWeb && route !== 'onboard';
-  const resumeCat = activeCat || (lastCategory && CATEGORIES.find((x) => x.id === lastCategory)) || null;
-  const goLearn = () => { if (resumeCat) { setActiveCat(resumeCat); setRoute('deck'); } else setRoute('home'); };
+  // Learn always opens a deck — resume the active/last-played category, else
+  // start the first one (previously did nothing when there was no progress).
+  const resumeCat = activeCat || (lastCategory && CATEGORIES.find((x) => x.id === lastCategory)) || CATEGORIES[0];
+  const goLearn = () => { setActiveCat(resumeCat); setRoute('deck'); };
 
   // shared destinations — identical on mobile bottom-nav and web sidebar
   const NAV = [
