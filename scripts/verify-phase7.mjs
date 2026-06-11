@@ -12,10 +12,11 @@ const browser = await chromium.launch();
 const speechStub = () => {
   const utterances = [];
   window.__utterances = utterances;
+  // real OS voices are localService; the picker prefers offline voices
   const voices = [
-    { lang: 'en-IN', name: 'Veena-Fake', default: false },
-    { lang: 'en-US', name: 'Samantha-Fake', default: true },
-    { lang: 'en-GB', name: 'Daniel-Fake', default: false },
+    { lang: 'en-IN', name: 'Veena-Fake', default: false, localService: true },
+    { lang: 'en-US', name: 'Samantha-Fake', default: true, localService: true },
+    { lang: 'en-GB', name: 'Daniel-Fake', default: false, localService: true },
   ];
   window.speechSynthesis.getVoices = () => voices;
   // plain utterance so assigning a fake voice object doesn't throw

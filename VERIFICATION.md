@@ -167,6 +167,26 @@ to emoji too if desired.
 
 Regression: phase suites 2–7 all still green after the change.
 
+### Follow-up — speech still silent for the reporter
+
+Root cause (confirmed in Chromium + WebKit probes): every utterance routed to
+the macOS **`Rishi` en-IN** voice because the default language was hard-coded
+`en-IN`. macOS lists en-IN voices that are usually *not downloaded* — they
+report `localService:true` and fire `onstart` yet emit no audio. Fixes:
+- **Default language → `en-US`** (reliably-audible Albert/Samantha; en-IN
+  stays selectable in the parent voice picker — matches the brief's "en-IN a
+  choice, not a hard-code").
+- **One-time migration**: a stored `en-IN` (the old default) is moved to
+  `en-US` once, guarded by `_langFix` so a deliberately re-picked en-IN sticks.
+  This auto-heals existing installs on next load.
+- **Utterance retention** (`_keepAlive`): hold in-flight utterances so
+  Safari/Chrome don't GC them mid-speech (fires onstart but silent).
+- **Guarded cancel** (only when `speaking||pending`) — an unconditional
+  `cancel()` before `speak()` can suppress the new utterance in Safari.
+- **`resume()` after speak**, and offline-preferring `pickVoice` with an
+  en-IN→audible-default fallback.
+Phase-7 stub updated to mark fake voices `localService` (real OS voices are).
+
 ## Phase 7 — Journey matrix + final sweep (PASSED 35/35 + 81-shot sweep)
 
 Automated: `node scripts/verify-phase7.mjs` — all journeys A–H from the brief:

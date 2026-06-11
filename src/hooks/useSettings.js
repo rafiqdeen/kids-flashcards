@@ -9,7 +9,10 @@ const DEFAULTS = {
   music: false,
   voice: true,
   motion: true,
-  language: 'en-IN',
+  // en-US is the reliably-audible default voice on macOS/Chrome/Windows; en-IN
+  // (and others) remain selectable in the parent voice picker. en-IN OS voices
+  // are often listed but not downloaded → silent, so it's not the default.
+  language: 'en-US',
   difficulty: 'normal',
   limit: true,
   theme: 'light',
@@ -20,7 +23,16 @@ const DEFAULTS = {
 export function useSettings() {
   const [settings, setSettings] = useState(() => {
     try {
-      return { ...DEFAULTS, ...JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}') };
+      const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+      // One-time: the previous hard-coded en-IN default routes to an OS voice
+      // (e.g. "Rishi") that's often listed-but-not-downloaded → silent. Move
+      // that legacy default to the audible en-US once; the user can re-pick
+      // en-IN afterward and it sticks (guarded by _langFix).
+      if (stored.language === 'en-IN' && !stored._langFix) {
+        stored.language = 'en-US';
+      }
+      stored._langFix = true;
+      return { ...DEFAULTS, ...stored };
     } catch {
       return DEFAULTS;
     }
