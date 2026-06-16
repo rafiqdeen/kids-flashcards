@@ -1,12 +1,8 @@
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import './styles/tokens.css'
-import './styles/app.css'
-import './styles/shell.css'
-import App from './App.jsx'
+import { createRoot } from 'react-dom/client';
+import './adventure/styles/tokens.css';
+import './adventure/styles/adventure.css';
+import { AdventureApp } from './adventure/index.jsx';
 
-createRoot(document.getElementById('root')).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
-)
+// The prototype renders <AdventureApp> directly (no StrictMode); we match that
+// so dev double-invocation can't desync seeded-RNG-dependent first renders.
+createRoot(document.getElementById('root')).render(<AdventureApp />);

@@ -1,0 +1,52 @@
+/* ============================================================
+   PIP CARDS — "ADVENTURE" design tokens.
+   Source of truth: design_handoff_pip_cards_adventure/adventure.css :root.
+   Self-hosted Fredoka (was Google Fonts @import in the prototype).
+   ============================================================ */
+
+@font-face {
+  font-family: 'Fredoka';
+  font-style: normal;
+  font-weight: 300 700;
+  font-display: swap;
+  src: url(/fonts/fredoka-variable.woff2) format('woff2');
+}
+
+:root {
+  --font: 'Fredoka', system-ui, sans-serif;
+  --sky-1: #4fc3f7; --sky-2: #81d4fa;
+  --ink: #2d3142;
+  --ink-2: #6b7086;
+  --white: #ffffff;
+  --gold: #ffc83d; --gold-deep: #f5a623;
+  --grass: #58cc02; --grass-deep: #46a302;
+  --coral: #ff4b4b; --coral-deep: #d33131;
+  --sky-btn: #1cb0f6; --sky-btn-deep: #1899d6;
+  --purple: #a560e8; --purple-deep: #8549ba;
+  --locked: #c5ccd6; --locked-deep: #a8b0bc;
+
+  /* category palette (shared with other directions) */
+  --cat-alphabet-1:#6366f1; --cat-alphabet-2:#8b5cf6;
+  --cat-numbers-1:#14b8a6;  --cat-numbers-2:#10b981;
+  --cat-animals-1:#f43f5e;  --cat-animals-2:#ec4899;
+  --cat-fruits-1:#f59e0b;   --cat-fruits-2:#ef4444;
+  --cat-vegetables-1:#22c55e; --cat-vegetables-2:#16a34a;
+  --cat-birds-1:#0ea5e9;    --cat-birds-2:#3b82f6;
+  --cat-colors-1:#a855f7;   --cat-colors-2:#ec4899;
+  --cat-shapes-1:#8b5cf6;   --cat-shapes-2:#6366f1;
+  --cat-vehicles-1:#ef4444; --cat-vehicles-2:#f97316;
+  --cat-body-1:#ec4899;     --cat-body-2:#f472b6;
+  --cat-weather-1:#06b6d4;  --cat-weather-2:#0ea5e9;
+  --cat-emotions-1:#eab308; --cat-emotions-2:#f59e0b;
+  --cat-ocean-1:#0891b2;    --cat-ocean-2:#0ea5e9;
+  --cat-dinos-1:#16a34a;    --cat-dinos-2:#65a30d;
+  --cat-space-1:#6366f1;    --cat-space-2:#a855f7;
+  --cat-music-1:#db2777;    --cat-music-2:#f472b6;
+  --cat-clothes-1:#0ea5e9;  --cat-clothes-2:#6366f1;
+  --cat-home-1:#d97706;     --cat-home-2:#f59e0b;
+  --cat-foods-1:#ea580c;    --cat-foods-2:#f97316;
+  --cat-helpers-1:#dc2626;  --cat-helpers-2:#f59e0b;
+
+  --r-md: 18px; --r-lg: 26px; --r-full: 999px;
+  --pop: cubic-bezier(.34, 1.56, .64, 1);
+}

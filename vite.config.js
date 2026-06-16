@@ -44,7 +44,7 @@ export default defineConfig({
       workbox: {
         // fully offline: all assets (incl. self-hosted Lexend) are local —
         // no runtime caching of remote origins needed anymore
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}']
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2,webp,m4a}']
       }
     })
   ],

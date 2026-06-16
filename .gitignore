@@ -24,3 +24,11 @@ dist-ssr
 *.sw?
 .vercel
 verification-shots/
+
+# generated screenshot artifacts from the Adventure visual-test harness
+visual-tests/ref/
+visual-tests/impl/
+visual-tests/diff/
+visual-tests/snap/
+visual-tests/baseline/
+visual-tests/snap-diff/

@@ -8,7 +8,15 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "generate-icons": "node scripts/generate-icons.mjs"
+    "generate-icons": "node scripts/generate-icons.mjs",
+    "test:decks": "node visual-tests/decks.mjs",
+    "test:functional": "node visual-tests/functional.mjs",
+    "test:e2e": "node visual-tests/e2e.mjs",
+    "test:zones": "node visual-tests/zones.mjs",
+    "test:snapshots": "node visual-tests/snapshots.mjs",
+    "test:diff": "node visual-tests/diff.mjs",
+    "test": "npm run lint && npm run test:decks && npm run build && npm run test:functional && npm run test:e2e",
+    "test:all": "npm run test && npm run test:zones && npm run test:snapshots"
   },
   "dependencies": {
     "react": "^19.2.0",
