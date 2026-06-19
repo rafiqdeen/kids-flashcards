@@ -157,7 +157,15 @@ add a 2nd profile → switch profiles (header name updates).
   (`registry.jsx` → `ADV_GAMES` + `ZONE_GAMES`/`ANYTIME`/`HUB_*`), shared helpers
   (`util.jsx`, `StarsModal.jsx`), the illustrated `GameCover.jsx`, and the 20
   games across `set1…5.jsx`. `ActivityHub` resolves a game's component from the
-  registry.
+  registry. **Centred play board:** games whose content was otherwise pinned to
+  the top (or split top/bottom by a `margin-top:auto` tray) carry a `gctr`
+  modifier on their `.game-area` — it absolutely-pins the instruction pill to the
+  top and vertically centres the gameplay below it, so tall/wide screens no longer
+  strand content at the edges or leave a dead gap. Applied to 14 games (shadow has
+  its own `.shadow-stage` variant with a drag hint); the full-canvas / animated /
+  bottom-anchored games (bubble, calm, block-stacker, tunnel, balloon, card-fountain)
+  are intentionally left edge-to-edge. Marked as diff deviations; behaviour covered
+  by `zones.mjs`.
 - **Story structure** — `src/adventure/story/` holds the comic engine
   (`ComicBook.jsx` + `Panel.jsx`), the `challenges.jsx` widgets +
   `COMIC_CHALLENGES` map, the four book page-graphs (`books.js`), and
@@ -178,9 +186,39 @@ add a 2nd profile → switch profiles (header name updates).
   top strip + bottom dock. The paper stays a TRUE square in every viewport via
   `width/height: min(100cqw,100cqh)` on `.paint-paper` (the stage is a
   `container-type:size`) — `aspect-ratio` + a `max-height` cap had stretched it
-  into an ellipse on wide/short windows. Marked an intentional diff deviation;
+  into an ellipse on wide/short windows. **Magic-fill border:** the flood-fill
+  boundary wall is stroked at the shared `GUIDE_W` (same width as the visible
+  guide, so the fill reaches exactly the outline — a wider wall used to leave a
+  white halo), and the filled region is then overfilled by `FILL_BLEED` px (8-way
+  offset-draw dilation) so its colour tucks UNDER the outline with no AA seam,
+  while staying inside the shape so it can't leak past the line. Verified clean on
+  cat/star/apple/flower/fish/sun/house. Marked an intentional diff deviation;
   every control (tools, brush styles, sizes, swatches, undo, eraser, stamp,
-  template switch, magic-fill) is guarded by `functional.mjs`.
+  template switch, magic-fill incl. reaches-outline + no-leak) is guarded by
+  `functional.mjs`. **Kid-friendly overhaul (research-driven, adversarially
+  reviewed).** Phase 1 — `advSfx` sound + `vibrate` haptics on actions, calm
+  (reduced-motion) sparkle/spray, single-active-pointer + no `onPointerLeave`
+  (strokes survive the paper edge), Redo + demoted "Start over", `announce`
+  captions, Save-to-device PNG, collision-proof `artId`, honest save copy,
+  3-star reward + personalized praise, gold selection rings. Phase 2 (safety) —
+  recolor-aware `floodFill` (`filled`/`same`/`miss`, cached outline wall mask,
+  centre-biased near-miss spiral), gentle clear-confirm (Keep painting is the
+  big default), non-destructive page switch with "has art" thumbnail dots +
+  reassurance, async-`restore()` guard (`restoringRef` blocks input/saves during
+  the image decode so a fast tap can't overwrite saved art — the defect the
+  review caught), debounced autosave, `setInk`/`inkRef` so empty pages keep no
+  doodle. Phase 3 (output) — `exportArt(size,type,q)`; finish keeps a 480 PNG
+  for Save/Print but stores a small 260px webp THUMBNAIL in the (localStorage, so
+  `resetAll` still wipes it) gallery; a full "My Art" viewer (`showGallery`) with
+  tappable items + a per-item demoted Delete (`removeArt`); Print (`window.print`)
+  + Save-to-device (`downloadArt`); privacy notes. Phase 4 (creative/learning) —
+  eyedropper tool, mirror/symmetry mode (`dab`→`drawDab` + an x-mirroring
+  `dab()`/`seg()`), glitter brush, circle/square/triangle shape stamps, a "Cat
+  starts with C" letter bridge + done-card subject, empty-canvas hint. Guards in
+  `functional.mjs` (now 68 assertions): halo, no-leak, ear-crossing, recolor,
+  near-miss, gentle-clear, thumbnail dot, page-switch, gallery open/view/delete,
+  Print, 5 tools, mirror both-halves, eyedropper adopt+revert, glitter, shapes.
+  Each phase was adversarially reviewed by a workflow; must-fixes were fixed.
 - **Lint** — a scoped ESLint override relaxes the strict `react-hooks@7`
   advisories (`set-state-in-effect`, `exhaustive-deps`, `refs`, `purity`,
   `immutability`) + `react-refresh/only-export-components` for `games/**`,
@@ -422,6 +460,55 @@ add a 2nd profile → switch profiles (header name updates).
   scrollable; at 834×1112: centered). These two screens are therefore an
   **intentional deviation** from the prototype and are flagged as such in
   `diff.mjs` (`DEVIATIONS`) rather than counted as pixel failures.
+
+- **Motion comic — Story Land books now animate (camera + parallax + beats +
+  hands-free autoplay)** — turned the four static comics into "living" motion
+  comics across all books. **Three motion tiers** (`adventure/motion.js`
+  `motionLevel()`): **full** (default) = camera + parallax + narration-synced
+  pops + ambient loops; **gentle** (in-app "Big animations" off) = camera +
+  parallax **kept** (it's the engagement driver) but busy beats/confetti/ambient
+  loops dropped; **static** (OS `prefers-reduced-motion`) = everything frozen +
+  autoplay off (a hard accessibility override). Pieces:
+  - **Camera (Ken-Burns) + depth parallax** — per-panel `fx:{cam:{from:[scale,
+    xPct,yPct],origin,dur},beats:[…]}` and per-element `depth` (0–1) in
+    `story/books.js`; `Panel.jsx` resolves them into a `.panel-cam.cam` wrapper
+    (`@keyframes kenBurns`) + inner `.pdepth.par` spans (`parallaxDrift`).
+    Authored FROM an offset/zoom TO neutral rest so the reduced-motion freeze
+    lands on a clean frame. A **continuous `camBreathe` loop** (12s, symmetric
+    0/100 = rest) runs after the intro settles so the scene never goes dead-still
+    — without it, a one-shot camera looks identical to the old static comic once
+    it settles (the reported "where's the new one?" bug).
+  - **Narration-synced beats** — `useSpeech.speak(text,{onStart({duration}),
+    onProgress,onDone})` drives timed `fx-pop`/`fx-bob` one-shots (real `<audio>`
+    duration when a clip exists; ~150 wpm estimate otherwise). `fx-pop/fx-bob`
+    are scoped under `.comic-panel` so they out-specify ambient prop loops
+    (`.sprop.twinkle` etc.) and actually fire; the class is removed after ~700ms
+    so the loop resumes. Beats fire in the FULL tier only.
+  - **Hands-free autoplay + replay** — `ComicBook.jsx`: `autoplay =
+    page.motion.autoplay && motionLevel()!=='static'`; `onNarrated` reveals the
+    next panel WITHIN a page only — it never crosses pages, so it can't auto-skip
+    a choice (DAY_OUT) or an unsolved challenge (QUEST: Next stays "Solve it
+    first!"). A ↺ **replay** control (`story-replay`) remounts the page's panels.
+  - **The gentle-tier camera fix** — `app.css` collapses *all* animations to
+    `.001ms` under `[data-motion="off"]` (same as reduced-motion), which silently
+    froze the camera in the gentle tier too. Re-asserted the camera + parallax
+    inside `@media (prefers-reduced-motion: no-preference){[data-motion="off"]
+    .panel-cam.cam{…!important}}` so gentle keeps the cinematic pan/zoom while OS
+    reduced-motion stays a hard freeze.
+  - **Larger story stage on desktop** — `.comic-page` was capped at 860×560 on
+    desktop, leaving huge margins on wide monitors. Now `@media (min-width:760px)`
+    → `max-width:min(96vw,1500px); max-height:min(86vh,800px)` (fills the screen,
+    capped so panels stay well-proportioned), and the fixed-`size` mascots/props
+    are scaled (`.comic-cast/​.sprop svg` `scale(1.4)/1.3`, anchored `center
+    bottom`) so characters stay prominent instead of getting lost in a bigger
+    sky. Wide `%` props and clamp() captions already scale. Phones/tablets and the
+    390×844 test viewport are untouched.
+  - **Verified** — `functional.mjs` gained 8 motion guards (now **77/77**):
+    replay present, camera mounts, autoplay reveals hands-free, reduced-motion
+    disables autoplay + freezes the camera + tap-to-reveal still works, gentle
+    tier keeps the camera but stops ambient loops. `zones.mjs` opens all 4 books
+    console-clean (125/125); `diff.mjs` 0/90 (story panels already in
+    `DEVIATIONS`); lint + build clean.
 
 ## Faithfully-reproduced prototype quirks (not bugs we introduced)
 

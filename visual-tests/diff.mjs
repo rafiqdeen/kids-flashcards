@@ -25,7 +25,11 @@ const THRESHOLD = 1.0; // percent
 const DEVIATIONS = new Set([
   'create', 'picker', 'parent-gate',
   'learn', 'learn-back', 'quiz',
+  // Games given the centred "play board" treatment (the `gctr` modifier) so tall/
+  // wide screens no longer strand content at the edges — an intentional, approved
+  // divergence from the edge-pinned prototype. Behaviour still covered by zones.mjs.
   'game-boxes', 'game-cube', 'game-fountain', 'game-jigsaw', 'game-pipsays', 'game-shadow', 'game-wheel',
+  'game-memory', 'game-trace', 'game-sort', 'game-train', 'game-peek', 'game-egg', 'game-doors', 'game-unfold',
   // World map: the trail is dropped when the first node (Learn) is the current
   // one, so the "you are here" mascot clears the zone-title banner instead of
   // overlapping it (the prototype had the overlap). Whole trail shifts down.

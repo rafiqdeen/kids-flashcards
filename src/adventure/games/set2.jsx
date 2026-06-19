@@ -39,7 +39,7 @@ export function CountingTrain({ cat, speak, onDone, I, Star, Burst }) {
   };
 
   return (
-    <div className="game-area" data-screen-label="Counting Train">
+    <div className="game-area gctr" data-screen-label="Counting Train">
       <button className="qprompt game-ask" onClick={() => speak(`Load ${goal} ${item.word.toLowerCase()}s!`)}>
         <I n="sound" s={22} /> Load <b>{goal}</b> {item.word.toLowerCase()}s!
       </button>
@@ -112,22 +112,25 @@ export function ShadowPuzzle({ cat, speak, onDone, I, Star, Burst }) {
   };
 
   return (
-    <div className="game-area" data-screen-label="Shadow Puzzle" onPointerMove={move} onPointerUp={up}>
+    <div className="game-area shadow-game" data-screen-label="Shadow Puzzle" onPointerMove={move} onPointerUp={up}>
       <div className="game-ask hud-pill">Match the shadows!</div>
-      <div className="shadow-row">
-        {safe.map((c) => (
-          <div key={c.id} className={`shadow-slot ${placed.includes(c.id) ? 'filled' : ''} ${wig === c.id ? 'wiggle' : ''}`} data-shadow={c.id}
-            aria-label={placed.includes(c.id) ? c.word : 'Mystery shadow'}>
-            <span className="shadow-art" style={{ color: 'var(--zc)' }}>{cardArt(c, 72)}</span>
-          </div>
-        ))}
-      </div>
-      <div className="sort-tray">
-        {tray.map((c) => placed.includes(c.id) ? null : (
-          <button key={c.id} className="sort-item" aria-label={c.word}
-            style={{ visibility: drag && drag.id === c.id ? 'hidden' : 'visible', color: 'var(--zc)' }}
-            onPointerDown={(e) => down(e, c)}>{cardArt(c, 56)}</button>
-        ))}
+      <div className="shadow-stage">
+        <div className="shadow-row">
+          {safe.map((c) => (
+            <div key={c.id} className={`shadow-slot ${placed.includes(c.id) ? 'filled' : ''} ${wig === c.id ? 'wiggle' : ''}`} data-shadow={c.id}
+              aria-label={placed.includes(c.id) ? c.word : 'Mystery shadow'}>
+              <span className="shadow-art" style={{ color: 'var(--zc)' }}>{cardArt(c, 72)}</span>
+            </div>
+          ))}
+        </div>
+        <div className="shadow-hint" aria-hidden="true">Drag a friend up to its shadow</div>
+        <div className="sort-tray">
+          {tray.map((c) => placed.includes(c.id) ? null : (
+            <button key={c.id} className="sort-item" aria-label={c.word}
+              style={{ visibility: drag && drag.id === c.id ? 'hidden' : 'visible', color: 'var(--zc)' }}
+              onPointerDown={(e) => down(e, c)}>{cardArt(c, 56)}</button>
+          ))}
+        </div>
       </div>
       {drag && (() => { const c = safe.find((x) => x.id === drag.id); return (
         <span className="drag-ghost" style={{ left: drag.x, top: drag.y, color: 'var(--zc)' }}>{cardArt(c, 60)}</span>); })()}
@@ -191,7 +194,7 @@ export function PipSays({ cat, speak, onDone, I, Star, Burst }) {
   };
 
   return (
-    <div className="game-area" data-screen-label="Pip Says">
+    <div className="game-area gctr" data-screen-label="Pip Says">
       <div className={`pipsays-mascot ${phase === 'dance' ? 'dance' : ''}`}>
         <HeroMascot state={phase === 'watch' ? 'point' : phase === 'dance' ? 'cheer' : 'idle'} size={86} />
       </div>

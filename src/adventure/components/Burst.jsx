@@ -1,12 +1,14 @@
-// Burst.jsx — confetti burst. Honors prefers-reduced-motion (renders nothing).
-// Particle positions use Math.random, so they're generated in an effect (not
-// during render) and held in state. Ported from adventure-app.jsx.
+// Burst.jsx — confetti burst. Confetti is "big" motion, so it's suppressed both
+// for OS reduce-motion AND when the in-app "Big animations" toggle is off
+// (prefersCalm), not just the OS pref. Particle positions use Math.random, so
+// they're generated in an effect (not during render). Ported from adventure-app.jsx.
 import { useState, useEffect } from 'react';
+import { prefersCalm } from '../motion.js';
 
 const COLS = ['#ffc83d', '#ff4b4b', '#58cc02', '#1cb0f6', '#a560e8', '#ff9600'];
 
 export function Burst({ onDone }) {
-  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const reduce = prefersCalm();
   const [bits, setBits] = useState([]);
   useEffect(() => {
     if (!reduce) {

@@ -244,6 +244,78 @@ async function main() {
       await ctx.close();
     }
 
+    // 8b. Motion comic — three tiers:
+    //   • full (motion on)       → autoplay reveals panels hands-free + camera runs
+    //   • OS reduced-motion      → autoplay OFF (tap-to-reveal) + camera frozen
+    //   • in-app "gentle" off    → camera KEPT, busy ambient loops dropped
+    {
+      // full tier: a fast Audio stub fires loadedmetadata/ended so the narration-
+      // driven autoplay advances deterministically (the global stub stays silent).
+      const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+      await ctx.addInitScript(INIT);
+      await ctx.addInitScript(`window.Audio = class { constructor(src){ this.src=src; this.duration=0.3; (window.__clips||[]).push(src); } play(){ Promise.resolve().then(()=>{ this.onloadedmetadata && this.onloadedmetadata(); setTimeout(()=>{ this.onended && this.onended(); }, 50); }); return Promise.resolve(); } pause(){} };`);
+      await ctx.route('**/registerSW.js', (r) => r.fulfill({ status: 200, contentType: 'text/javascript', body: '' }));
+      await ctx.route('**/sw.js', (r) => r.fulfill({ status: 200, contentType: 'text/javascript', body: '' }));
+      const page = await ctx.newPage();
+      page.on('console', (m) => { if (m.type() === 'error') consoleErrors.push(m.text()); });
+      page.on('pageerror', (e) => consoleErrors.push(String(e)));
+      await page.goto(base, { waitUntil: 'networkidle' });
+      await seed(page);
+      await page.$eval('[data-testid="open-story"]', (el) => el.click());
+      await page.click('[data-testid="story-book"]');
+      await page.waitForSelector('[data-screen-label^="Comic:"]', { timeout: 6000 });
+      ok('autoplay page shows a replay control', !!(await page.$('[data-testid="story-replay"]')));
+      ok('revealed panel mounts the Ken-Burns camera', !!(await page.$('.comic-panel.revealed .panel-cam.cam')));
+      const autoRevealed = await page.waitForSelector('[data-testid="panel-1"].revealed', { timeout: 5000 }).then(() => true).catch(() => false);
+      ok('autoplay reveals the next panel hands-free', autoRevealed);
+      await ctx.close();
+    }
+    {
+      // OS reduced-motion: autoplay off, tap still reveals, camera frozen (~0s).
+      const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, reducedMotion: 'reduce' });
+      await ctx.addInitScript(INIT);
+      await ctx.route('**/registerSW.js', (r) => r.fulfill({ status: 200, contentType: 'text/javascript', body: '' }));
+      await ctx.route('**/sw.js', (r) => r.fulfill({ status: 200, contentType: 'text/javascript', body: '' }));
+      const page = await ctx.newPage();
+      page.on('console', (m) => { if (m.type() === 'error') consoleErrors.push(m.text()); });
+      page.on('pageerror', (e) => consoleErrors.push(String(e)));
+      await page.goto(base, { waitUntil: 'networkidle' });
+      await seed(page);
+      await page.$eval('[data-testid="open-story"]', (el) => el.click());
+      await page.click('[data-testid="story-book"]');
+      await page.waitForSelector('[data-screen-label^="Comic:"]', { timeout: 6000 });
+      await page.waitForTimeout(900); // give any (disabled) autoplay a chance to misfire
+      ok('reduced-motion disables autoplay (panel stays hidden)', !!(await page.$('[data-testid="panel-1"].hidden')));
+      await page.click('[data-testid="panel-1"]');
+      const tapped = await page.waitForSelector('[data-testid="panel-1"].revealed', { timeout: 3000 }).then(() => true).catch(() => false);
+      ok('tap reveals a hidden panel under reduced-motion', tapped);
+      const camDur = await page.$eval('.panel-cam.cam', (el) => getComputedStyle(el).animationDuration).catch(() => null);
+      ok('reduced-motion freezes the camera', camDur != null && parseFloat(camDur) < 0.05, `dur=${camDur}`);
+      await ctx.close();
+    }
+    {
+      // in-app "gentle" (Big animations off, no OS reduce): camera KEPT, loops dropped.
+      const { ctx, page } = await newPage();
+      await page.goto(base, { waitUntil: 'networkidle' });
+      await page.evaluate((p) => {
+        localStorage.clear();
+        localStorage.setItem('pip-profiles', JSON.stringify([p]));
+        localStorage.setItem('pip-active', p.id);
+        localStorage.setItem('pip-adv-set-' + p.id, JSON.stringify({ voice: true, sfx: true, music: false, motion: false, difficulty: 'easy', buddy: 'pip', disabled: [] }));
+      }, PROFILE);
+      await page.reload({ waitUntil: 'networkidle' });
+      await page.$eval('[data-testid="open-story"]', (el) => el.click());
+      await page.click('[data-testid="story-book"]');
+      await page.waitForSelector('[data-screen-label^="Comic:"]', { timeout: 6000 });
+      const camName = await page.$eval('.panel-cam.cam', (el) => getComputedStyle(el).animationName).catch(() => 'none');
+      const camDur = await page.$eval('.panel-cam.cam', (el) => getComputedStyle(el).animationDuration).catch(() => '0s');
+      ok('gentle tier keeps the camera animating', camName.includes('kenBurns') && parseFloat(camDur) > 1, `name=${camName} dur=${camDur}`);
+      const sprop = await page.$('.comic-panel .sprop');
+      const spropAnim = sprop ? await sprop.evaluate((el) => getComputedStyle(el).animationName) : 'missing';
+      ok('gentle tier stops busy ambient prop loops', spropAnim === 'none', `name=${spropAnim}`);
+      await ctx.close();
+    }
+
     // 9. Paint: drawing enables "done"; finishing saves to the PER-PROFILE
     //    gallery key (the documented bug fix), not the legacy shared key.
     {
@@ -308,10 +380,10 @@ async function main() {
       const checked = (sel) => page.getAttribute(sel, 'aria-checked');
 
       // control inventory
-      ok('paint has 4 tools', (await page.$$('[data-testid^="paint-tool-"]')).length === 4);
+      ok('paint has 5 tools', (await page.$$('[data-testid^="paint-tool-"]')).length === 5);
       ok('paint has 11 colour swatches', (await page.$$('.pswatch')).length === 11);
       ok('brush tool selected by default', (await checked('[data-testid="paint-tool-brush"]')) === 'true');
-      ok('brush shows 4 styles', (await page.$$('[data-testid^="paint-brush-"]')).length === 4);
+      ok('brush shows 5 styles', (await page.$$('[data-testid^="paint-brush-"]')).length === 5);
 
       // each brush style lays down ink
       for (const style of ['marker', 'rainbow', 'spray', 'sparkle']) {
@@ -350,7 +422,7 @@ async function main() {
       // stamp drops a shape
       await page.click('[data-testid="paint-tool-stamp"]');
       ok('stamp selects', (await checked('[data-testid="paint-tool-stamp"]')) === 'true');
-      ok('stamp shows 3 shapes', (await page.$$('[data-testid^="paint-stamp-"]')).length === 3);
+      ok('stamp shows its shapes', (await page.$$('[data-testid^="paint-stamp-"]')).length === 6);
       await page.click('[data-testid="paint-stamp-heart"]');
       const beforeStamp = await ink();
       await page.mouse.click(box.x + box.width * 0.5, box.y + box.height * 0.2);
@@ -370,6 +442,225 @@ async function main() {
       await page.waitForTimeout(120);
       ok('magic fill floods the page', (await ink()) > beforeFill + 100000, `${beforeFill}->${await ink()}`);
 
+      await ctx.close();
+    }
+
+    // 9c. Magic fill must reach the outline (no white halo) AND not leak past it.
+    //     Fill the cat face, then sample the canvas around the head circle: the
+    //     outline inner edge (~r257 in 1000px space) should be the fill colour all
+    //     the way round, and just outside the outline (~r285) should be untouched.
+    {
+      const { ctx, page } = await newPage();
+      await page.goto(base, { waitUntil: 'networkidle' });
+      await seed(page, { animals: { learnStars: 3 } });
+      await page.click('[data-testid="node-animals-activity"]');
+      await page.click('[data-testid="activity-paint"]');
+      await page.waitForSelector('[data-screen-label="Paint studio"]');
+      await page.click('[aria-label="Red"]');
+      await page.click('[data-testid="paint-tool-fill"]');
+      const box = await (await page.$('[data-testid="paint-canvas"]')).boundingBox();
+      await page.mouse.click(box.x + box.width * 0.5, box.y + box.height * 0.52);
+      await page.waitForTimeout(150);
+      const ring = (radius) => page.evaluate((r) => {
+        const c = document.querySelector('[data-testid="paint-canvas"]');
+        const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data;
+        const cx = 500, cy = 394; // head centre in 1000px space
+        let red = 0, n = 0;
+        for (let a = 0; a < 48; a++) {
+          const ang = a * Math.PI / 24;
+          const x = Math.round(cx + Math.cos(ang) * r), y = Math.round(cy + Math.sin(ang) * r);
+          if (x < 0 || y < 0 || x >= c.width || y >= c.height) continue;
+          n++; const i = (y * c.width + x) * 4;
+          if (d[i] > 180 && d[i + 1] < 120 && d[i + 2] < 120 && d[i + 3] > 200) red++;
+        }
+        return { red, n };
+      }, radius);
+      const inner = await ring(257);
+      ok('magic fill reaches the outline (no white halo)', inner.red >= inner.n - 4, `${inner.red}/${inner.n} red at inner edge`);
+      const outer = await ring(285);
+      ok('magic fill does not leak past the outline', outer.red === 0, `${outer.red} red px outside`);
+      // The cat ears must sit ON the head, not cross into it: after filling the
+      // face, the upper-inner head band should have NO tan outline pixels (the old
+      // template drew ear legs deep inside the head, which showed through the fill).
+      const earTan = await page.evaluate(() => {
+        const c = document.querySelector('[data-testid="paint-canvas"]');
+        const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data;
+        let tan = 0;
+        for (let x = 320; x <= 680; x += 4) {
+          const i = (244 * c.width + x) * 4;
+          if (d[i + 3] > 120 && Math.abs(d[i] - 217) < 45 && Math.abs(d[i + 1] - 196) < 45 && Math.abs(d[i + 2] - 173) < 45) tan++;
+        }
+        return tan;
+      });
+      ok('cat ears do not cross into the head', earTan === 0, `${earTan} tan px inside head`);
+      await ctx.close();
+    }
+
+    // 9d. Phase 2 — safety & forgiveness: recolor-fill, gentle clear, the
+    //     "has art" thumbnail dot, page-switch preservation, near-miss fill.
+    {
+      const { ctx, page } = await newPage();
+      await page.goto(base, { waitUntil: 'networkidle' });
+      await seed(page, { animals: { learnStars: 3 } });
+      await page.click('[data-testid="node-animals-activity"]');
+      await page.click('[data-testid="activity-paint"]');
+      await page.waitForSelector('[data-screen-label="Paint studio"]');
+      const box = await (await page.$('[data-testid="paint-canvas"]')).boundingBox();
+      const pixel = (xf, yf) => page.evaluate(({ xf, yf }) => {
+        const c = document.querySelector('[data-testid="paint-canvas"]');
+        const d = c.getContext('2d').getImageData(Math.round(c.width * xf), Math.round(c.height * yf), 1, 1).data;
+        return [d[0], d[1], d[2], d[3]];
+      }, { xf, yf });
+      const inkAt = () => page.evaluate(() => {
+        const c = document.querySelector('[data-testid="paint-canvas"]');
+        const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data;
+        let n = 0; for (let i = 3; i < d.length; i += 4) if (d[i] > 10) n++; return n;
+      });
+
+      // near-miss forgiveness FIRST (fresh cat, no caption yet): tapping right on
+      // the head outline must still fill, not dead no-op.
+      await page.click('[aria-label="Yellow"]');
+      await page.click('[data-testid="paint-tool-fill"]');
+      const beforeNM = await inkAt();
+      await page.mouse.click(box.x + box.width * 0.236, box.y + box.height * 0.40); // on the head's left outline
+      await page.waitForTimeout(150);
+      ok('near-miss tap on the outline still fills', (await inkAt()) > beforeNM, `${beforeNM} -> ${await inkAt()}`);
+
+      // recolor-fill: fill the cat face red, then tap it again with blue
+      await page.click('[aria-label="Red"]');
+      await page.mouse.click(box.x + box.width * 0.5, box.y + box.height * 0.48);
+      await page.waitForTimeout(120);
+      const red = await pixel(0.5, 0.44);
+      ok('fill paints the face', red[0] > 180 && red[1] < 120 && red[2] < 120, JSON.stringify(red));
+      await page.click('[aria-label="Blue"]');
+      await page.mouse.click(box.x + box.width * 0.5, box.y + box.height * 0.48);
+      await page.waitForTimeout(120);
+      const blue = await pixel(0.5, 0.44);
+      ok('recolor-fill repaints a filled region (red -> blue)', blue[2] > 150 && blue[0] < 120, JSON.stringify(blue));
+
+      // gentle clear: dialog leads with Keep painting; Keep preserves the art
+      await page.click('[data-testid="paint-clear"]');
+      await page.waitForSelector('[data-testid="paint-clear-confirm"]');
+      ok('clear confirm offers Keep + a demoted wipe', !!(await page.$('[data-testid="paint-clear-keep"]')) && !!(await page.$('[data-testid="paint-clear-wipe"]')));
+      await page.click('[data-testid="paint-clear-keep"]');
+      await page.waitForTimeout(80);
+      ok('Keep painting preserves the art', !(await page.$('[data-testid="paint-clear-confirm"]')) && (await pixel(0.5, 0.44))[3] > 0);
+
+      // "has art" thumbnail dot
+      ok('inked page shows a thumbnail dot', !!(await page.$('[data-testid="paint-tmpl-cat"] .ptmpl-dot')));
+
+      // page-switch preserves each page's drawing
+      await page.click('[data-testid="paint-tmpl-apple"]'); await page.waitForTimeout(150);
+      ok('switching to a blank page shows it empty', (await pixel(0.5, 0.44))[3] === 0);
+      await page.click('[data-testid="paint-tmpl-cat"]'); await page.waitForTimeout(250);
+      ok('switching back restores the cat art', (await pixel(0.5, 0.44))[3] > 0);
+      await ctx.close();
+    }
+
+    // 9e. Phase 3 — output: gallery viewer, Print button, kid-safe per-item delete.
+    {
+      const { ctx, page } = await newPage();
+      await page.goto(base, { waitUntil: 'networkidle' });
+      await seed(page, { animals: { learnStars: 3 } });
+      await page.click('[data-testid="node-animals-activity"]');
+      await page.click('[data-testid="activity-paint"]');
+      await page.waitForSelector('[data-screen-label="Paint studio"]');
+      const box = await (await page.$('[data-testid="paint-canvas"]')).boundingBox();
+      await page.click('[data-testid="paint-tool-fill"]');
+      await page.mouse.click(box.x + box.width * 0.5, box.y + box.height * 0.48);
+      await page.waitForTimeout(150);
+      await page.click('[data-testid="paint-done"]');
+      await page.waitForSelector('[data-testid="paint-complete"]');
+      ok('done card offers a Print button', !!(await page.$('[data-testid="paint-print"]')));
+      await page.click('button:has-text("Paint another")');
+      await page.waitForTimeout(150);
+      ok('gallery shelf appears after saving', !!(await page.$('[data-testid="paint-gallery-open"]')));
+      await page.click('[data-testid="paint-gallery-open"]');
+      await page.waitForSelector('[data-testid="paint-gallery"]');
+      ok('gallery shows the saved painting', (await page.$$('[data-testid="paint-gallery-item"]')).length === 1);
+      await page.click('[data-testid="paint-gallery-item"]');
+      await page.waitForSelector('[data-testid="paint-gallery-view"]');
+      ok('tapping a painting opens the full view + delete', !!(await page.$('[data-testid="paint-art-delete"]')));
+      await page.click('[data-testid="paint-art-delete"]'); // first tap asks to confirm (kid-safe)
+      await page.waitForSelector('[data-testid="paint-art-delete-yes"]');
+      ok('delete asks for confirmation first', (await page.$$('[data-testid="paint-gallery-item"]')).length === 1);
+      await page.click('[data-testid="paint-art-delete-yes"]');
+      await page.waitForTimeout(150);
+      ok('delete removes it from the gallery', (await page.$$('[data-testid="paint-gallery-item"]')).length === 0);
+      const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('pip-adv-gallery-p1') || '[]').length);
+      ok('delete persists to storage', stored === 0, `stored=${stored}`);
+      await ctx.close();
+    }
+
+    // 9f. Phase 4 — creative tools: 5 tools, mirror mode, eyedropper, glitter, shape stamps.
+    {
+      const { ctx, page } = await newPage();
+      await page.goto(base, { waitUntil: 'networkidle' });
+      await seed(page, { animals: { learnStars: 3 } });
+      await page.click('[data-testid="node-animals-activity"]');
+      await page.click('[data-testid="activity-paint"]');
+      await page.waitForSelector('[data-screen-label="Paint studio"]');
+      const box = await (await page.$('[data-testid="paint-canvas"]')).boundingBox();
+      const ink = () => page.evaluate(() => {
+        const c = document.querySelector('[data-testid="paint-canvas"]');
+        const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data;
+        let n = 0; for (let i = 3; i < d.length; i += 4) if (d[i] > 10) n++; return n;
+      });
+      ok('paint now has 5 tools', (await page.$$('[data-testid^="paint-tool-"]')).length === 5);
+
+      // mirror: a stroke on the LEFT also paints the RIGHT (blank page, clean halves)
+      await page.click('[data-testid="paint-tmpl-blank"]'); await page.waitForTimeout(150);
+      await page.click('[data-testid="paint-mirror"]');
+      await page.click('[aria-label="Blue"]');
+      await page.mouse.move(box.x + box.width * 0.2, box.y + box.height * 0.4);
+      await page.mouse.down();
+      await page.mouse.move(box.x + box.width * 0.3, box.y + box.height * 0.6, { steps: 6 });
+      await page.mouse.up(); await page.waitForTimeout(100);
+      const halves = await page.evaluate(() => {
+        const c = document.querySelector('[data-testid="paint-canvas"]');
+        const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data, mid = c.width / 2;
+        let L = 0, R = 0;
+        for (let y = 0; y < c.height; y += 2) for (let x = 0; x < c.width; x += 2) { if (d[(y * c.width + x) * 4 + 3] > 10) (x < mid ? L++ : R++); }
+        return { L, R };
+      });
+      ok('mirror mode paints both halves', halves.L > 40 && halves.R > 40, JSON.stringify(halves));
+      await page.click('[data-testid="paint-mirror"]'); // off
+
+      // eyedropper: fill the cat face blue, switch to red, pick the face, confirm adoption
+      await page.click('[data-testid="paint-tmpl-cat"]'); await page.waitForTimeout(200);
+      await page.click('[aria-label="Blue"]');
+      await page.click('[data-testid="paint-tool-fill"]');
+      await page.mouse.click(box.x + box.width * 0.5, box.y + box.height * 0.48);
+      await page.waitForTimeout(120);
+      await page.click('[aria-label="Red"]');
+      await page.click('[data-testid="paint-tool-pick"]');
+      await page.mouse.click(box.x + box.width * 0.5, box.y + box.height * 0.48); // pick the blue face
+      await page.waitForTimeout(80);
+      ok('eyedropper reverts to brush after picking', (await page.getAttribute('[data-testid="paint-tool-brush"]', 'aria-checked')) === 'true');
+      // adoption is verified deterministically via the active-colour size dot
+      const dotColor = await page.$eval('.size-row .pdot', (el) => getComputedStyle(el).backgroundColor);
+      const cc = (dotColor.match(/\d+/g) || []).map(Number);
+      ok('eyedropper adopted the picked (blue) colour', cc.length >= 3 && cc[2] > 150 && cc[0] < 130, dotColor);
+
+      // glitter brush draws (on a blank page, in a clear lower area, so ink delta is real)
+      await page.click('[data-testid="paint-tmpl-blank"]'); await page.waitForTimeout(180);
+      await page.click('[aria-label="Pink"]');
+      await page.click('[data-testid="paint-brush-glitter"]');
+      const beforeG = await ink();
+      await page.mouse.move(box.x + box.width * 0.45, box.y + box.height * 0.85);
+      await page.mouse.down();
+      await page.mouse.move(box.x + box.width * 0.6, box.y + box.height * 0.88, { steps: 5 });
+      await page.mouse.up(); await page.waitForTimeout(80);
+      ok('glitter brush draws', (await ink()) > beforeG);
+
+      // shape stamps
+      await page.click('[data-testid="paint-tool-stamp"]');
+      ok('stamps now include shapes (6 total)', (await page.$$('[data-testid^="paint-stamp-"]')).length === 6);
+      await page.click('[data-testid="paint-stamp-triangle"]');
+      const beforeS = await ink();
+      await page.mouse.click(box.x + box.width * 0.5, box.y + box.height * 0.2); // clear top area
+      await page.waitForTimeout(80);
+      ok('shape stamp adds ink', (await ink()) > beforeS);
       await ctx.close();
     }
 

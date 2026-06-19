@@ -277,6 +277,7 @@ button:focus-visible, [tabindex]:focus-visible { outline: 4px solid #fff; outlin
 }
 .paint-tmpls::-webkit-scrollbar { width: 6px; }
 .ptmpl {
+  position: relative;
   flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: 2px;
   width: 100%; padding: 8px 6px 6px;
   font-family: var(--font); font-size: 12px; font-weight: 600; color: var(--ink);
@@ -326,7 +327,7 @@ button:focus-visible, [tabindex]:focus-visible { outline: 4px solid #fff; outlin
   width: 38px; height: 38px; border-radius: 50%; border: 3px solid #fff; cursor: pointer;
   box-shadow: 0 3px 0 rgba(0,0,0,.2); transition: transform .12s var(--pop);
 }
-.pswatch.sel { transform: scale(1.18); box-shadow: 0 3px 0 rgba(0,0,0,.2), 0 0 0 3px var(--ink); }
+.pswatch.sel { transform: scale(1.18); box-shadow: 0 3px 0 rgba(0,0,0,.2), 0 0 0 2px #fff, 0 0 0 5px var(--gold); }
 .pswatch:active { transform: scale(.92); }
 .ptools { display: flex; gap: 4px; background: rgba(255,255,255,.55); padding: 4px; border-radius: var(--r-md); }
 .ptools.tools-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
@@ -336,7 +337,7 @@ button:focus-visible, [tabindex]:focus-visible { outline: 4px solid #fff; outlin
   background: transparent; border: none; border-radius: 12px; color: var(--ink); cursor: pointer;
 }
 .tools-grid .ptool { width: 100%; }
-.ptool.sel { background: #fff; box-shadow: 0 3px 0 rgba(0,0,0,.15); color: var(--purple-deep); }
+.ptool.sel { background: #fff; box-shadow: 0 0 0 3px var(--gold), 0 3px 0 rgba(0,0,0,.15); color: var(--purple-deep); }
 .ptool:disabled { opacity: .4; cursor: default; }
 .ptool.danger { color: var(--coral-deep); }
 .pdot { display: inline-block; border-radius: 50%; }
@@ -353,6 +354,54 @@ button:focus-visible, [tabindex]:focus-visible { outline: 4px solid #fff; outlin
 .paint-shelf img { width: 46px; height: 46px; flex-shrink: 0; border-radius: 10px; background: #fffdf9;
   box-shadow: 0 3px 0 rgba(0,0,0,.15); transform: rotate(-2deg); }
 .paint-shelf img:nth-child(even) { transform: rotate(2deg); }
+/* Clear is deliberately demoted: muted, translucent and set apart from Undo/Redo
+   so it is no longer the most tap-attractive control beside them. */
+.clear-btn {
+  align-self: center; display: inline-flex; align-items: center; gap: 6px;
+  margin-top: 2px; padding: 6px 14px; border: none; border-radius: var(--r-full);
+  background: rgba(255,255,255,.35); color: var(--ink); opacity: .7;
+  font-family: var(--font); font-size: 12px; font-weight: 700; cursor: pointer;
+}
+.clear-btn:active { transform: scale(.95); }
+.paint-stars { display: flex; gap: 6px; justify-content: center; margin: -2px 0 2px; }
+/* "This page has your drawing" dot on a coloring-page thumbnail. */
+.ptmpl-dot { position: absolute; top: 5px; right: 5px; width: 9px; height: 9px; border-radius: 50%;
+  background: var(--gold); box-shadow: 0 0 0 2px #fff; }
+/* The clear-confirm wipe is a quiet text link, never a big tappable button, so
+   "Keep painting" is always the obvious choice. */
+.clear-confirm-wipe { margin-top: 4px; padding: 6px 10px; border: none; background: none;
+  font-family: var(--font); font-size: 13px; font-weight: 600; color: var(--ink); opacity: .55;
+  text-decoration: underline; cursor: pointer; }
+.clear-confirm-wipe:active { opacity: .85; }
+/* "My art" shelf opens the full gallery. */
+.paint-shelf-btn { display: flex; flex-direction: column; align-items: center; gap: 3px;
+  border: none; background: rgba(255,255,255,.4); border-radius: var(--r-md); padding: 6px 6px 5px;
+  cursor: pointer; font-family: var(--font); }
+.paint-shelf-btn small { font-weight: 700; color: var(--ink); font-size: 11px; }
+.paint-shelf-btn:active { transform: scale(.96); }
+.gallery-privacy { font-size: 12px; color: var(--ink); opacity: .6; margin: 2px 0 0; text-align: center; }
+/* Full "My Art" gallery viewer. */
+.gallery-card { background: #fffdf9; border-radius: 22px; padding: 20px; width: min(92vw, 540px); max-height: 86vh;
+  overflow-y: auto; box-shadow: 0 12px 0 #d8dde6, 0 30px 60px rgba(0,0,0,.3);
+  display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 10px; width: 100%; }
+.gallery-item { border: none; background: #fff; border-radius: 12px; padding: 4px; cursor: pointer;
+  box-shadow: 0 3px 0 rgba(0,0,0,.15); transition: transform .12s var(--pop); }
+.gallery-item img { width: 100%; aspect-ratio: 1; border-radius: 8px; display: block; object-fit: cover; }
+.gallery-item:active { transform: scale(.93); }
+/* Friendly empty-canvas hint (fades when the first ink lands). */
+.paint-hint { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none;
+  font-family: var(--font); font-weight: 700; font-size: clamp(15px, 2.4vw, 22px); color: #806326;
+  text-align: center; padding: 0 12%; }
+/* Mirror / symmetry toggle. */
+.pmirror { display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  border: 3px solid transparent; border-radius: var(--r-md); background: rgba(255,255,255,.55);
+  padding: 7px 10px; font-family: var(--font); font-size: 12px; font-weight: 700; color: var(--ink);
+  cursor: pointer; }
+.pmirror.on { border-color: var(--gold); background: #fff; color: var(--purple-deep); }
+.pmirror:active { transform: scale(.96); }
+.done-subject { font-size: 16px; color: var(--ink); margin: -2px 0 2px; }
+.done-subject b { color: var(--purple-deep); }
 
 /* Portrait tablets: the canvas is width-bound here, so a left rail would only
    shrink it — keep templates as a top strip and just the tools rail on the right. */
@@ -435,6 +484,12 @@ button:focus-visible, [tabindex]:focus-visible { outline: 4px solid #fff; outlin
 .game-area { flex: 1; position: relative; display: flex; flex-direction: column; align-items: center;
   gap: 12px; padding: 4px 16px 16px; min-height: 0; overflow: hidden; }
 .game-ask { z-index: 5; }
+/* Centred-board modifier: pins the instruction pill to the top and vertically
+   centres the gameplay below it, so tall/wide screens don't strand content at
+   the edges or leave a big dead gap. Add `gctr` to a game's .game-area. */
+.game-area.gctr { justify-content: center; padding-top: 56px; gap: clamp(16px, 4vh, 40px); }
+.game-area.gctr > .game-ask { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); margin: 0; }
+.game-area.gctr .sort-tray, .game-area.gctr .count-tray { margin-top: 0; padding-bottom: 0; }
 .game-round { position: absolute; bottom: 12px; right: 16px; font-weight: 700; color: #fff;
   background: rgba(0,0,0,.2); padding: 5px 14px; border-radius: 99px; }
 
@@ -503,6 +558,19 @@ button:focus-visible, [tabindex]:focus-visible { outline: 4px solid #fff; outlin
 .sort-item:active { cursor: grabbing; }
 .drag-ghost { position: fixed; z-index: 99; pointer-events: none; transform: translate(-50%, -55%) scale(1.15);
   filter: drop-shadow(0 10px 14px rgba(0,0,0,.3)); }
+/* Shadow Puzzle: group the shadow targets + the friends tray into ONE centred
+   board so tall/wide screens don't strand them at opposite edges (the sky→grass
+   gradient stays as ambiance behind the board). */
+.shadow-game .shadow-stage {
+  flex: 1; width: 100%; max-width: 600px; margin: 0 auto; min-height: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: clamp(20px, 4.5vh, 52px);
+}
+.shadow-game .sort-tray { margin-top: 0; padding-bottom: 0; }
+.shadow-hint {
+  font-family: var(--font); font-weight: 700; font-size: 14px; color: #fff;
+  background: rgba(0,0,0,.16); padding: 5px 14px; border-radius: var(--r-full);
+}
 .shadow-row { display: flex; gap: clamp(10px, 4vw, 30px); justify-content: center; padding-top: 6px; }
 .shadow-slot { width: 110px; height: 110px; display: grid; place-items: center;
   background: rgba(255,255,255,.4); border-radius: 22px; border: 3px dashed rgba(255,255,255,.8); }
@@ -902,6 +970,53 @@ button:focus-visible, [tabindex]:focus-visible { outline: 4px solid #fff; outlin
   font-family: var(--font); font-size: clamp(13px, 1.9vw, 17px); font-weight: 600; color: #2d3142; text-align: left;
   background: #fff8d6; border: 3px solid #2d3142; border-radius: 8px; padding: 6px 12px;
   box-shadow: 3px 3px 0 rgba(45,49,66,.2); animation: bubbleIn .35s var(--pop) both; }
+/* ---- Motion comic: camera (Ken-Burns) + depth parallax + timed pops ----
+   Authored FROM an offset/zoom TO the neutral rest state (transform:none), so the
+   OS reduced-motion freeze (animation-duration:.001ms) lands on the CLEAN frame.
+   Deliberately NOT in the [data-motion="off"] allowlist above: the in-app "gentle"
+   tier KEEPS the calm camera + parallax (only the busy ambient loops are dropped).
+   OS Reduce-Motion still freezes them via the @media block. */
+.panel-cam { position: absolute; inset: 0; }
+/* Two stacked animations: a dramatic Ken-Burns ENTRANCE (one-shot, settles to
+   rest), then — once it finishes (delay = --cam-dur) — a slow, endless "breathe"
+   so the scene never goes dead-still. The last-listed active animation wins, so
+   the breathe takes over cleanly the instant the entrance ends. */
+.panel-cam.cam { animation: kenBurns var(--cam-dur, 10s) ease-out both,
+    camBreathe 12s ease-in-out var(--cam-dur, 10s) infinite;
+  transform-origin: var(--cam-origin, center); will-change: transform; }
+@keyframes kenBurns { from { transform: scale(var(--cam-s, 1.08)) translate(var(--cam-x, 0%), var(--cam-y, 0%)); } to { transform: none; } }
+/* Living-photo loop. Symmetric (0/100% = rest) so OS reduce-motion's
+   iteration-count:1 freeze lands on the clean, untransformed frame. Pure zoom
+   (no translate) so it can't expose a panel-edge sliver at any transform-origin,
+   and reads the same regardless of where the subject sits. */
+@keyframes camBreathe { 0%, 100% { transform: none; } 50% { transform: scale(1.05); } }
+.pdepth { display: inline-block; }
+.pdepth.par { animation: parallaxDrift var(--cam-dur, 10s) ease-out both; }
+@keyframes parallaxDrift { from { transform: translate(calc(var(--depth, 0) * -4%), calc(var(--depth, 0) * 3%)); } to { transform: none; } }
+/* one-shot beat pops fired by the choreographer (only in the FULL tier). !important
+   so a beat reliably overrides an element's own ambient loop (.sprop.twinkle etc.)
+   for the moment it's applied — they'd otherwise only tie on specificity and win by
+   source order, which is fragile. The class is removed after ~700ms so the ambient
+   loop resumes. (Safe under the .001ms freezes: beats never fire in the gentle/static
+   tiers — Panel.jsx guards them behind !prefersCalm().) */
+.comic-panel .fx-pop { animation: fxPop .5s var(--pop) !important; }
+@keyframes fxPop { 0% { transform: scale(1); } 40% { transform: scale(1.18); } 100% { transform: scale(1); } }
+.comic-panel .fx-bob { animation: fxBob .6s ease-in-out !important; }
+@keyframes fxBob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+/* The in-app "Big animations" off (gentle) tier inherits app.css's blanket
+   animation-duration:.001ms collapse, which would freeze the camera too. Re-assert
+   the camera + parallax so gentle KEEPS the calm cinematic pan/zoom that holds a
+   child's attention — but ONLY when the OS hasn't requested reduced motion (that
+   stays a hard, accessibility-grade freeze). Busy beats + ambient loops are still
+   dropped in gentle (JS prefersCalm() + the [data-motion="off"] allowlist). */
+@media (prefers-reduced-motion: no-preference) {
+  [data-motion="off"] .panel-cam.cam {
+    animation-duration: var(--cam-dur, 10s), 12s !important;
+    animation-iteration-count: 1, infinite !important;
+  }
+  [data-motion="off"] .pdepth.par { animation-duration: var(--cam-dur, 10s) !important; }
+}
+
 .comic-challenge { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 6px 0 2px; }
 .comic-task { font-family: var(--font); font-size: 17px; font-weight: 700; color: #2d3142;
   background: #fff; border: 3px solid #2d3142; border-radius: 99px; padding: 8px 20px;
@@ -1022,6 +1137,18 @@ html[data-tone="warm"] .tone-overlay { background: rgba(255, 168, 50, 0.22);
 @media (max-width: 560px) {
   .qgrid2 { grid-template-columns: repeat(2, minmax(140px, 1fr)); }
   .level-stage { padding-inline: 56px; }
+}
+/* Desktop: let the story fill far more of the screen while staying tightly
+   composed (not stretched into tall empty columns). Scales with the viewport,
+   capped so panels never get awkwardly huge. Phones/tablets unaffected.
+   The art (mascots + fixed-size props) is scaled up to match the bigger stage so
+   characters stay prominent instead of getting lost in the sky; wide % props and
+   clamp()-sized captions/bubbles already scale on their own. */
+@media (min-width: 760px) {
+  .comic-page { max-width: min(96vw, 1500px); max-height: min(86vh, 800px); margin: auto; }
+  .comic-panel .comic-cast > svg,
+  .comic-panel .comic-cast > .pdepth > svg { transform: scale(1.4); transform-origin: center bottom; }
+  .comic-panel .sprop:not(.wideprop) svg { transform: scale(1.3); transform-origin: center bottom; }
 }
 
 

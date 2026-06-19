@@ -104,7 +104,7 @@ export function MemoryMatch({ cat, speak, onDone, I, Star, Burst }) {
   };
 
   return (
-    <div className="game-area" data-screen-label="Memory Match">
+    <div className="game-area gctr" data-screen-label="Memory Match">
       <div className="game-ask hud-pill">Find the pairs! · {moves} flips</div>
       <div className="mem-grid">
         {tiles.map((t) => {
@@ -199,7 +199,7 @@ export function Tracing({ cat, speak, onDone, I, Star, Burst }) {
   const next = ptsRef.current[Math.min(idx, total)] || { x: 0, y: 0 };
 
   return (
-    <div className="game-area" data-screen-label="Tracing">
+    <div className="game-area gctr" data-screen-label="Tracing">
       <div className="game-ask hud-pill">Trace the <b style={{ color: 'var(--zc)', margin: '0 4px' }}>{tr.label}</b>!</div>
       <div className={`trace-paper ${idx >= total ? 'donebounce' : ''}`}>
         <svg ref={svgRef} viewBox="0 0 100 100" style={{ touchAction: 'none', width: '100%', height: '100%' }}
@@ -265,7 +265,7 @@ export function ColorSort({ speak, onDone, I, Star, Burst }) {
   };
 
   return (
-    <div className="game-area" data-screen-label="Color Sort" onPointerMove={move} onPointerUp={up}>
+    <div className="game-area gctr" data-screen-label="Color Sort" onPointerMove={move} onPointerUp={up}>
       <div className="game-ask hud-pill">Feed the monsters!</div>
       <div className="monster-row">
         {SORT_COLORS.map((c) => (

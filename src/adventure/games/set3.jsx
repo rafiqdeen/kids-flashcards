@@ -61,7 +61,7 @@ export function PeekABoo({ cat, speak, onDone, I, Star, Burst }) {
   };
 
   return (
-    <div className="game-area" data-screen-label="Peek-a-Boo">
+    <div className="game-area gctr" data-screen-label="Peek-a-Boo">
       <button className="qprompt game-ask" onClick={() => speak(`Tap the ${target.word}!`)}>
         <I n="sound" s={22} /> Tap the <b>{target.word}</b>!
       </button>
@@ -127,7 +127,7 @@ export function MagicCube({ cat, speak, onDone, I, Star, Burst }) {
   };
 
   return (
-    <div className="game-area" data-screen-label="Magic Cube">
+    <div className="game-area gctr" data-screen-label="Magic Cube">
       <button className="qprompt game-ask" onClick={() => speak(`Find the ${target.word}!`)}>
         <I n="sound" s={22} /> Spin to the <b>{target.word}</b>, then tap it!
       </button>
@@ -207,7 +207,7 @@ export function JigsawPuzzle({ cat, speak, onDone, I, Star, Burst }) {
   };
 
   return (
-    <div className="game-area" data-screen-label="Picture Pieces" onPointerMove={move} onPointerUp={up}>
+    <div className="game-area gctr" data-screen-label="Picture Pieces" onPointerMove={move} onPointerUp={up}>
       <div className="game-ask hud-pill">Build the picture!</div>
       <div className="jig-wrap">
         <div className="jig-board">
@@ -265,7 +265,7 @@ export function EggSurprise({ cat, speak, onDone, I, Star, Burst }) {
   };
 
   return (
-    <div className="game-area" data-screen-label="Egg Surprise">
+    <div className="game-area gctr" data-screen-label="Egg Surprise">
       <div className="game-ask hud-pill">Tap tap tap… who's inside?</div>
       <div className="egg-row">
         {pool.map((c) => {

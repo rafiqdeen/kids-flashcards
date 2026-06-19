@@ -56,7 +56,7 @@ export function MysteryBoxes({ cat, speak, onDone, I, Star, Burst }) {
   };
 
   return (
-    <div className="game-area" data-screen-label="Mystery Boxes">
+    <div className="game-area gctr" data-screen-label="Mystery Boxes">
       <div className="game-ask hud-pill">{phase === 'guess' ? `Where is the ${friend.word}?` : phase === 'shuffle' ? 'Watch them dance!' : 'Watch closely…'}</div>
       <div className="boxes-stage">
         {[0, 1, 2].map((i) => (
@@ -125,7 +125,7 @@ export function PrizeWheel({ cat, speak, onDone, I, Star, Burst }) {
   };
 
   return (
-    <div className="game-area" data-screen-label="Prize Wheel" onPointerMove={move} onPointerUp={up} onPointerLeave={up}>
+    <div className="game-area gctr" data-screen-label="Prize Wheel" onPointerMove={move} onPointerUp={up} onPointerLeave={up}>
       <button className="qprompt game-ask" onClick={() => speak(`Stop on the ${target.word}!`)}>
         <I n="sound" s={22} /> Spin to the <b>{target.word}</b>!
       </button>
@@ -185,7 +185,7 @@ export function MagicDoors({ cat, speak, onDone, I, Star, Burst }) {
   };
 
   return (
-    <div className="game-area" data-screen-label="Magic Doors">
+    <div className="game-area gctr" data-screen-label="Magic Doors">
       <button className="qprompt game-ask" onClick={() => speak(`Where is the ${friend.word}?`)}>
         <I n="sound" s={22} /> Find the <b>{friend.word}</b>!
       </button>
@@ -251,7 +251,7 @@ export function UnfoldCube({ cat, speak, onDone, I, Star, Burst }) {
   };
 
   return (
-    <div className="game-area" data-screen-label="Unfold the Cube">
+    <div className="game-area gctr" data-screen-label="Unfold the Cube">
       <div className="game-ask hud-pill">Tap the paper to unfold it!</div>
       <button className="fold-scene" onClick={unfold} aria-label={`Folded picture, ${unfolded} of 4 panels open. Tap to unfold.`}>
         <span className="fold-pic" style={{ color: 'var(--zc)' }}>{cardArt(answer, 150)}</span>
