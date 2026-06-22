@@ -38,11 +38,36 @@ cards.forEach((c) => { if (c.word) add(`Find the ${c.word}!`); }); // primary qu
 CATEGORIES.forEach((c) => { add(`Let's learn ${c.name}!`); add(`${c.name} quiz! Ready?`); });
 // fixed, non-interpolated lines spoken across the core flow
 [
-  'Play time!', 'Treasure time!', 'Learned!', 'Yes!', 'Story time!',
+  'Play time!', 'Treasure time!', 'Learned!', 'Yes!', 'Story time!', 'To the map!',
   'Treasure! You found a sticker!', 'All lands are open!',
   'All fresh! Let’s start a new adventure!', "Hi! I'm Pip. Let's go on an adventure!",
   'Welcome to Story Land! Pick a comic book!',
 ].forEach(add);
+// ---- Play games: fixed (wordless) feedback/instruction lines + finite per-game
+// combos. Per-word game PROMPTS reuse the baked `Find the {word}!` clips above
+// (the games speak that for the target), so they need no new per-word clips. ----
+[
+  'A match!', 'All aboard! Choo choo!', 'Almost! Try another spot!', 'Build a big tower! Tap the drop button!',
+  'Click! Perfect!', 'Dance party!', 'Empty! Try another box!', 'Hmm, try another shadow!',
+  'Keep peeking! Unfold more!', 'Nobody here! Try another door!', 'Perfect fit!', 'Pop! Yes!', 'Pop!',
+  'Round two! New shadows!', 'Tap a colour, then tap the monster who loves it!', 'Tap a friend, then tap its shadow!',
+  'Tap tap!', 'Tap the eggs to hatch your friends!', 'Unfold the magic paper! What is hiding inside?',
+  'Welcome to the calm corner. Breathe with the flower.', 'You found them all!', 'Your turn!',
+  "It's cracking!", "Oops! Listen again!", 'Watch closely!',
+  // Feed the Monsters (3 fixed colours)
+  'Red', 'Yellow', 'Blue', 'Yum! Red!', 'Yum! Yellow!', 'Yum! Blue!',
+  'No no — I only eat red!', 'No no — I only eat yellow!', 'No no — I only eat blue!',
+].forEach(add);
+// Tracing: the finite glyph "say" lines and their two prompt forms
+['C!', 'Big letter L!', 'V!', 'One!', 'Three!', 'Seven!', 'A circle!', 'A square!', 'Zig zag!', 'A wavy wave!', 'Up the hill and down!']
+  .forEach((s) => { add(s); add(`Tap the glowing dot to trace it! ${s}`); add(`Now this one! ${s}`); add(`${s} Wonderful!`); });
+// game labels — spoken when a game opens (ActivityHub.open -> speak(`${label}!`))
+[
+  'Bubble Pop', 'Memory Match', 'Tracing', 'Feed the Monsters', 'Counting Train', 'Shadow Puzzle',
+  'Pip Says', 'Calm Corner', 'Peek-a-Boo', 'Magic Cube', 'Picture Pieces', 'Egg Surprise',
+  'Mystery Boxes', 'Prize Wheel', 'Magic Doors', 'Magic Paper', 'Block Stacker', 'Tunnel Runner',
+  'Card Fountain', 'Balloon Float', 'Paint Studio',
+].forEach((s) => add(`${s}!`));
 
 const list = [...phrases];
 console.log(`voice: "${VOICE}"  |  generating ${list.length} clips → public/narration/`);

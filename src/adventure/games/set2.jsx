@@ -3,9 +3,11 @@
 import { useState, useEffect, useRef } from 'react';
 import { Illu } from '../art/Illu.jsx';
 import { HeroMascot } from '../art/Mascot.jsx';
-import { advGamePool, cardArt, shuffle, pickCards, NUM_WORDS } from './util.jsx';
+import { advGamePool, cardArt, shuffle, pickCards, NUM_WORDS, SPEEDS } from './util.jsx';
+import { SpeedPills } from './SpeedPills.jsx';
 import { StarsModal as AdvStarsModal } from './StarsModal.jsx';
 import { CARDS } from '../data/cards.js';
+import { advSfx } from '../audio.js';
 
 /* ============ 5. COUNTING TRAIN ============ */
 export function CountingTrain({ cat, speak, onDone, I, Star, Burst }) {
@@ -26,10 +28,11 @@ export function CountingTrain({ cat, speak, onDone, I, Star, Burst }) {
     if (depart || end || hopping.includes(i) || loaded >= goal) return;
     const n = loaded + 1;
     setHopping((h) => [...h, i]); setLoaded(n);
+    advSfx('tap');
     speak(NUM_WORDS[n] + '!');
     if (n === goal) {
       setTimeout(() => {
-        setDepart(true); speak('All aboard! Choo choo!');
+        setDepart(true); advSfx('yes'); speak('All aboard! Choo choo!');
         setTimeout(() => {
           if (round + 1 >= TRAIN_ROUNDS) { setBurst(true); setEnd({ stars: 3 }); onDone('train', 3); }
           else { setRound(round + 1); setLoaded(0); setHopping([]); setDepart(false); }
@@ -80,64 +83,58 @@ export function ShadowPuzzle({ cat, speak, onDone, I, Star, Burst }) {
   const safe = pool.slice(rnd * 3, rnd * 3 + 3);
   const [placed, setPlaced] = useState([]);
   const [tray, setTray] = useState(() => shuffle(pool.slice(0, 3)));
-  const [drag, setDrag] = useState(null);
+  const [sel, setSel] = useState(null); // selected friend id — tap a friend, then tap its shadow
   const [wig, setWig] = useState(null);
   const [end, setEnd] = useState(null);
   const [burst, setBurst] = useState(false);
 
-  useEffect(() => { setTimeout(() => speak('Match each friend to its shadow!'), 500); }, []);
+  useEffect(() => { setTimeout(() => speak('Tap a friend, then tap its shadow!'), 500); }, []);
   useEffect(() => {
-    setTray(shuffle(pool.slice(rnd * 3, rnd * 3 + 3))); setPlaced([]);
+    setTray(shuffle(pool.slice(rnd * 3, rnd * 3 + 3))); setPlaced([]); setSel(null);
     if (rnd > 0) speak('Round two! New shadows!');
   }, [rnd]);
 
-  const down = (e, c) => { e.preventDefault(); setDrag({ id: c.id, x: e.clientX, y: e.clientY }); };
-  const move = (e) => { if (drag) setDrag((d) => ({ ...d, x: e.clientX, y: e.clientY })); };
-  const up = (e) => {
-    if (!drag) return;
-    const el = document.elementFromPoint(e.clientX, e.clientY);
-    const slot = el && el.closest('[data-shadow]');
-    const id = drag.id; setDrag(null);
-    if (slot) {
-      if (slot.getAttribute('data-shadow') === id) {
-        const np = [...placed, id];
-        setPlaced(np); setWig(id); speak('Perfect fit!');
-        setTimeout(() => setWig(null), 600);
-        if (np.length === safe.length) {
-          if (rnd + 1 < totalRounds) setTimeout(() => setRnd(rnd + 1), 900);
-          else { setBurst(true); setTimeout(() => { setEnd({ stars: 3 }); onDone('shadow', 3); }, 700); }
-        }
-      } else speak('Hmm, try another shadow!');
-    }
+  const pick = (c) => { if (sel === c.id) { setSel(null); return; } setSel(c.id); advSfx('tap'); speak(c.word); };
+  const place = (slotId) => {
+    if (!sel || placed.includes(slotId)) return;
+    if (slotId === sel) {
+      const np = [...placed, sel]; setPlaced(np); setWig(sel); setSel(null); advSfx('yes'); speak('Perfect fit!');
+      setTimeout(() => setWig(null), 600);
+      if (np.length === safe.length) {
+        if (rnd + 1 < totalRounds) setTimeout(() => setRnd(rnd + 1), 900);
+        else { setBurst(true); setTimeout(() => { setEnd({ stars: 3 }); onDone('shadow', 3); }, 700); }
+      }
+    } else { advSfx('no'); speak('Hmm, try another shadow!'); } // keep the friend selected to try again
   };
 
   return (
-    <div className="game-area shadow-game" data-screen-label="Shadow Puzzle" onPointerMove={move} onPointerUp={up}>
-      <div className="game-ask hud-pill">Match the shadows!</div>
+    <div className="game-area shadow-game" data-screen-label="Shadow Puzzle">
+      <div className="game-ask hud-pill">{sel ? 'Now tap its shadow!' : 'Tap a friend!'}</div>
       <div className="shadow-stage">
         <div className="shadow-row">
-          {safe.map((c) => (
-            <div key={c.id} className={`shadow-slot ${placed.includes(c.id) ? 'filled' : ''} ${wig === c.id ? 'wiggle' : ''}`} data-shadow={c.id}
-              aria-label={placed.includes(c.id) ? c.word : 'Mystery shadow'}>
-              <span className="shadow-art" style={{ color: 'var(--zc)' }}>{cardArt(c, 72)}</span>
-            </div>
-          ))}
+          {safe.map((c) => {
+            const filled = placed.includes(c.id);
+            return (
+              <div key={c.id} className={`shadow-slot ${filled ? 'filled' : ''} ${wig === c.id ? 'wiggle' : ''} ${sel && !filled ? 'targetable' : ''}`}
+                data-shadow={c.id} role={filled ? undefined : 'button'} tabIndex={filled ? -1 : 0} aria-label={filled ? c.word : 'Mystery shadow — tap to match'}
+                onClick={() => place(c.id)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); place(c.id); } }}>
+                <span className="shadow-art" style={{ color: 'var(--zc)' }}>{cardArt(c, 72)}</span>
+              </div>
+            );
+          })}
         </div>
-        <div className="shadow-hint" aria-hidden="true">Drag a friend up to its shadow</div>
+        <div className="shadow-hint" aria-hidden="true">Tap a friend, then tap its shadow</div>
         <div className="sort-tray">
           {tray.map((c) => placed.includes(c.id) ? null : (
-            <button key={c.id} className="sort-item" aria-label={c.word}
-              style={{ visibility: drag && drag.id === c.id ? 'hidden' : 'visible', color: 'var(--zc)' }}
-              onPointerDown={(e) => down(e, c)}>{cardArt(c, 56)}</button>
+            <button key={c.id} className={`sort-item ${sel === c.id ? 'sel' : ''}`} aria-label={c.word} aria-pressed={sel === c.id}
+              style={{ color: 'var(--zc)' }} onClick={() => pick(c)}>{cardArt(c, 56)}</button>
           ))}
         </div>
       </div>
-      {drag && (() => { const c = safe.find((x) => x.id === drag.id); return (
-        <span className="drag-ghost" style={{ left: drag.x, top: drag.y, color: 'var(--zc)' }}>{cardArt(c, 60)}</span>); })()}
       <div className="game-round">{rnd + 1} / {totalRounds}</div>
       {burst && <Burst onDone={() => setBurst(false)} />}
       {end && <AdvStarsModal stars={3} title="Shadow master!" sub="Every friend found its shadow!" I={I} Star={Star}
-        onAgain={() => { setEnd(null); setPlaced([]); setTray(shuffle(pool.slice(0, 3))); setRnd(0); }} onBack={() => onDone('__back')} />}
+        onAgain={() => { setEnd(null); setPlaced([]); setTray(shuffle(pool.slice(0, 3))); setRnd(0); setSel(null); }} onBack={() => onDone('__back')} />}
     </div>
   );
 }
@@ -153,6 +150,9 @@ export function PipSays({ cat, speak, onDone, I, Star, Burst }) {
   const [pos, setPos] = useState(0);
   const [end, setEnd] = useState(null);
   const [burst, setBurst] = useState(false);
+  const [spd, setSpd] = useState(1);     // index into SPEEDS (default Normal)
+  const mul = SPEEDS[spd].mul;
+  const mulRef = useRef(mul); mulRef.current = mul;
   const timers = useRef([]);
 
   const playSeq = (s) => {
@@ -161,9 +161,9 @@ export function PipSays({ cat, speak, onDone, I, Star, Burst }) {
     s.forEach((ci, i) => {
       timers.current.push(setTimeout(() => {
         setLit(ci); speak(cards[ci].word);
-        timers.current.push(setTimeout(() => setLit(null), 600));
-        if (i === s.length - 1) timers.current.push(setTimeout(() => { setPhase('play'); speak('Your turn!'); }, 900));
-      }, 600 + i * 950));
+        timers.current.push(setTimeout(() => setLit(null), 600 / mulRef.current));
+        if (i === s.length - 1) timers.current.push(setTimeout(() => { setPhase('play'); speak('Your turn!'); }, 900 / mulRef.current));
+      }, (600 + i * 950) / mulRef.current));
     });
   };
   const startRound = (r) => {
@@ -176,6 +176,7 @@ export function PipSays({ cat, speak, onDone, I, Star, Burst }) {
     if (phase !== 'play' || end) return;
     setLit(ci); setTimeout(() => setLit(null), 350);
     if (ci === seq[pos]) {
+      advSfx('yes');
       speak(cards[ci].word);
       if (pos + 1 >= seq.length) {
         if (round + 1 >= SAYS_ROUNDS) {
@@ -188,6 +189,7 @@ export function PipSays({ cat, speak, onDone, I, Star, Burst }) {
         }
       } else setPos(pos + 1);
     } else {
+      advSfx('no');
       speak("Oops! Listen again!");
       setTimeout(() => playSeq(seq), 800);
     }
@@ -199,6 +201,7 @@ export function PipSays({ cat, speak, onDone, I, Star, Burst }) {
         <HeroMascot state={phase === 'watch' ? 'point' : phase === 'dance' ? 'cheer' : 'idle'} size={86} />
       </div>
       <div className="game-ask hud-pill">{phase === 'watch' ? 'Watch and listen…' : phase === 'play' ? 'Your turn! Repeat it!' : 'Dance party!'}</div>
+      <SpeedPills value={spd} onChange={setSpd} disabled={phase === 'play'} />
       <div className="says-row">
         {cards.map((c, i) => (
           <button key={c.id} className={`says-card ${lit === i ? 'lit' : ''} ${phase === 'dance' ? 'bop' : ''}`}
@@ -230,6 +233,7 @@ export function CalmCorner({ speak }) {
     return () => clearInterval(iv);
   }, []);
   const tapFly = (k) => {
+    advSfx('tap');
     setFlies((fs) => fs.map((f) => f.k === k ? { ...f, glow: true } : f));
     setTimeout(() => setFlies((fs) => fs.map((f) => f.k === k ? { ...f, glow: false } : f)), 900);
   };

@@ -50,6 +50,16 @@ const DEVIATIONS = new Set([
   // The prototype had a stacked top-strip + bottom-dock, so this can't reach 0%.
   // Tool/brush/stamp/size/fill/undo behaviour is fully guarded by functional.mjs.
   'paint',
+  // Activity hub: the per-zone "<Land> Playground" node was removed; games now
+  // live in a single top-level destination "Pip's Playground" (a sibling of
+  // Story Land, reached from the bottom dock) — a curated multi-shelf library
+  // with a carnival banner, wholly different from the prototype's per-zone grid.
+  // Behaviour covered by functional.mjs + e2e.mjs.
+  'activity-hub',
+  // A persistent bottom nav dock (Adventure · Play · Stories) was added over every
+  // in-app screen (replacing the corner Stories/Play FABs), so these screens now
+  // diverge from the dock-less prototype too. Behaviour covered by functional.mjs.
+  'chest', 'story-shelf',
 ]);
 const devName = (f) => f.replace(/-(phone|tablet)\.png$/, '');
 fs.mkdirSync(DIFF, recursive());

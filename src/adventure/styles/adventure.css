@@ -44,10 +44,12 @@ button:focus-visible, [tabindex]:focus-visible { outline: 4px solid #fff; outlin
 .world-hud {
   position: fixed; top: 0; left: 0; right: 0; z-index: 50;
   display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  flex-wrap: wrap; row-gap: 8px;
   padding: 12px clamp(14px, 4vw, 40px);
   pointer-events: none;
 }
 .world-hud > * { pointer-events: auto; }
+.hud-left, .hud-right, .hud-utils { display: inline-flex; align-items: center; gap: 10px; }
 .hud-pill {
   display: inline-flex; align-items: center; gap: 8px;
   height: 48px; padding: 0 18px;
@@ -256,7 +258,10 @@ button:focus-visible, [tabindex]:focus-visible { outline: 4px solid #fff; outlin
   to { transform: translate(var(--dx), var(--dy)) rotate(var(--rot)); opacity: 0; } }
 
 /* caption */
-.cap2 { position: fixed; left: 50%; top: 76px; bottom: auto; transform: translateX(-50%); z-index: 95;
+/* Spoken-line caption — a bottom subtitle, sitting just above the nav dock so it
+   never collides with the top-of-screen game/quiz prompt pills (which show the
+   same text). Suppressed in the comic, which has its own captions/bubbles. */
+.cap2 { position: fixed; left: 50%; top: auto; bottom: calc(var(--dock-h) + 12px); transform: translateX(-50%); z-index: 46;
   display: inline-flex; align-items: center; gap: 9px;
   font-size: 18px; font-weight: 600; color: var(--ink);
   background: #fff; border-radius: 99px; padding: 11px 22px;
@@ -489,13 +494,31 @@ button:focus-visible, [tabindex]:focus-visible { outline: 4px solid #fff; outlin
    the edges or leave a big dead gap. Add `gctr` to a game's .game-area. */
 .game-area.gctr { justify-content: center; padding-top: 56px; gap: clamp(16px, 4vh, 40px); }
 .game-area.gctr > .game-ask { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); margin: 0; }
+/* The prompt pill is pinned (absolute, top:10, height:48 -> bottom 58) so it sits OUTSIDE
+   the flow. When a game also has the 🐢/🐰/⚡ speed control, that control is the first
+   in-flow child and would tuck right under the pill and touch it. Clear it past the
+   pinned prompt so the two never overlap (only affects games that have a speed control). */
+.game-area.gctr > .speed-ctl { margin-top: 26px; }
 .game-area.gctr .sort-tray, .game-area.gctr .count-tray { margin-top: 0; padding-bottom: 0; }
 .game-round { position: absolute; bottom: 12px; right: 16px; font-weight: 700; color: #fff;
   background: rgba(0,0,0,.2); padding: 5px 14px; border-radius: 99px; }
 
 /* bubble pop */
-.bub-sky { position: absolute; inset: 0; }
-.bub { position: absolute; bottom: -130px; width: 96px; height: 96px; background: none; border: none; cursor: pointer;
+/* clip risers (bubbles, balloons) to the play area so they never travel through —
+   or get tap-stolen by — the persistent dock band below it */
+.bub-sky { position: absolute; inset: 0; overflow: hidden; }
+/* shared 🐢/🐰/⚡ speed control (Bubble Pop, Balloon, Tunnel, Peek, Pip Says, Boxes,
+   Fountain). position:relative + z-index so it stays tappable above moving targets. */
+.speed-ctl { position: relative; z-index: 6; display: inline-flex; gap: 6px; padding: 5px;
+  background: rgba(255,255,255,.42); border-radius: var(--r-full); box-shadow: 0 3px 0 rgba(0,0,0,.08); }
+.speed-btn:disabled { opacity: .5; cursor: default; }
+.speed-btn { display: inline-flex; align-items: center; gap: 5px; padding: 7px 15px; border: none;
+  border-radius: var(--r-full); background: transparent; color: var(--ink); font-family: var(--font);
+  font-size: 14px; font-weight: 800; cursor: pointer; touch-action: manipulation; transition: background .15s, transform .12s; }
+.speed-btn .speed-emoji { font-size: 16px; }
+.speed-btn.on { background: #fff; box-shadow: 0 3px 0 rgba(0,0,0,.12); }
+.speed-btn:active { transform: translateY(2px); }
+.bub { position: absolute; bottom: -150px; width: 120px; height: 120px; background: none; border: none; cursor: pointer;
   animation: bubUp linear infinite; padding: 0; }
 @keyframes bubUp { from { transform: translateY(0); } to { transform: translateY(calc(-100vh - 160px)); } }
 .bub-skin { position: absolute; inset: 0; border-radius: 50%;
@@ -554,10 +577,17 @@ button:focus-visible, [tabindex]:focus-visible { outline: 4px solid #fff; outlin
 .monster.shakex { animation: qShake .45s ease; }
 .sort-tray { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; margin-top: auto; padding-bottom: 14px; }
 .sort-item { width: 72px; height: 72px; display: grid; place-items: center; background: #fff; border: none;
-  border-radius: 18px; box-shadow: 0 5px 0 #d8dde6; cursor: grab; touch-action: none; }
-.sort-item:active { cursor: grabbing; }
-.drag-ghost { position: fixed; z-index: 99; pointer-events: none; transform: translate(-50%, -55%) scale(1.15);
-  filter: drop-shadow(0 10px 14px rgba(0,0,0,.3)); }
+  border-radius: 18px; box-shadow: 0 5px 0 #d8dde6; cursor: pointer; touch-action: manipulation;
+  transition: transform .14s var(--pop), box-shadow .14s var(--pop); }
+.sort-item:active { transform: translateY(3px); box-shadow: 0 2px 0 #d8dde6; }
+/* tap-to-pick selection: a lifted swatch/friend with a gold ring (replaces drag) */
+.sort-item.sel { transform: translateY(-9px) scale(1.08);
+  box-shadow: 0 13px 0 #d8dde6, 0 0 0 4px var(--gold); cursor: pointer; }
+/* once something is picked, ring the valid drop targets in gold so kids see where
+   to tap. A static ring (not a pulse) keeps targets tappable/stable and avoids any
+   reduced-motion concern, and won't fight the monsters' chomp/shakex animations. */
+.monster.targetable, .shadow-slot.targetable, .jig-slot.targetable { cursor: pointer;
+  box-shadow: 0 0 0 4px rgba(255,255,255,.7), 0 0 0 8px var(--gold); }
 /* Shadow Puzzle: group the shadow targets + the friends tray into ONE centred
    board so tall/wide screens don't strand them at opposite edges (the sky→grass
    gradient stays as ambiance behind the board). */
@@ -668,32 +698,96 @@ button:focus-visible, [tabindex]:focus-visible { outline: 4px solid #fff; outlin
 .hole-grass::after { content: ''; position: absolute; top: -9px; left: 16px; right: 16px; height: 16px; background: #2e7d32; border-radius: 50%; }
 
 /* ============ NEW GAMES: MAGIC CUBE (3D) ============ */
-.cube-stage { display: flex; align-items: center; justify-content: center; gap: clamp(10px, 4vw, 34px); margin: auto; }
-.cube-turn { min-height: 58px; width: 58px; }
-.cube-scene { width: 224px; height: 224px; perspective: 1000px; }
+/* Magic Cube — a premium 3D cube: shaded faces, a real lid, a gentle float + ground
+   shadow so it reads as a solid spinnable object (not a flat card). */
+.cube-stage { display: flex; align-items: center; justify-content: center; gap: clamp(10px, 4vw, 36px); margin: auto; }
+.cube-turn { min-height: 58px; width: 58px; flex-shrink: 0; }
+.cube-holder { position: relative; display: grid; place-items: center; padding: 14px 0 30px; }
+.cube-scene { perspective: 1100px; perspective-origin: 50% 46%; animation: cubeFloat 4s ease-in-out infinite; } /* size set inline */
+@keyframes cubeFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
 .cube-scene.win { animation: cubeWin .9s var(--pop); }
 @keyframes cubeWin { 30% { transform: scale(1.14) rotate(4deg); } 60% { transform: scale(.94) rotate(-3deg); } }
-.cube { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; transition: transform .65s var(--pop); cursor: pointer; }
+.cube { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; transition: transform .7s var(--pop); cursor: pointer; }
 .cube-face {
-  position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden;
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
-  background: #fff; border-radius: 18px;
-  box-shadow: inset 0 0 0 5px rgba(0,0,0,.07), inset 0 -10px 0 rgba(0,0,0,.05);
+  /* inset:-1px so adjacent faces overlap by a hair — kills the anti-aliased
+     seam at shared edges. Small radius (faces meeting at an edge can't be very
+     round or the shared edge clips inward and the cube reads as separate tiles)
+     and NO outer ring, so the six faces read as one solid object. */
+  position: absolute; inset: -1px; backface-visibility: hidden; -webkit-backface-visibility: hidden;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; border-radius: 10px;
+  background: linear-gradient(158deg, #ffffff 0%, #eef2f9 70%, #dbe3f1 100%);
+  box-shadow: inset 0 3px 0 rgba(255,255,255,.9), inset 0 -18px 30px rgba(74,86,120,.12);
 }
-.cube-face b { font-family: var(--font); font-size: 19px; color: var(--ink); }
-.cube-face.cap { background: #e9edf5; }
+.cube-face b { font-family: var(--font); font-size: 20px; font-weight: 800; color: var(--ink); }
+.cube-face.cap { gap: 0; }
+/* The lid: a flat, evenly-lit top (no harsh off-centre hotspot, which read as a
+   skewed surface). Brighter than the sides so it clearly catches the light from
+   above and reads as the same solid material capping the cube. */
+.cube-face.cap.top { background: linear-gradient(180deg, #fbfdff, #dfe7f5 62%, #cdd8ec);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.5); }
+.cube-face.cap.bot { background: linear-gradient(#9fb0d0, #8294b8); }
+.cube-spark { font-size: 34px; opacity: .42; }
+.cube-shadow { position: absolute; bottom: 6px; left: 50%; width: 62%; height: 22px; transform: translateX(-50%);
+  background: radial-gradient(50% 50% at 50% 50%, rgba(40,50,80,.28), transparent 72%); filter: blur(3px);
+  animation: cubeShadow 4s ease-in-out infinite; }
+@keyframes cubeShadow { 0%, 100% { transform: translateX(-50%) scale(1); opacity: .6; } 50% { transform: translateX(-50%) scale(.84); opacity: .4; } }
 
-/* ============ NEW GAMES: PICTURE PIECES ============ */
-.jig-wrap { display: flex; align-items: center; justify-content: center; gap: clamp(16px, 5vw, 44px); margin: auto; flex-wrap: wrap; }
-.jig-board { display: flex; flex-direction: column; gap: 5px; padding: 10px; background: rgba(255,255,255,.35); border-radius: 18px; perspective: 800px; }
-.jig-slot { width: 240px; height: 80px; border-radius: 10px; border: 3px dashed rgba(255,255,255,.9); background: rgba(255,255,255,.25); position: relative; overflow: hidden; }
-.jig-slot.filled { border-style: solid; border-color: var(--grass); background: #fff; }
-.jig-slot.filled .jig-clip { animation: jigSnap .5s var(--pop); }
-@keyframes jigSnap { from { transform: rotateX(55deg) scale(1.12); } }
-.jig-clip { width: 240px; height: 80px; overflow: hidden; display: block; position: relative; background: #fff; border-radius: 8px; }
-.jig-tray { display: flex; flex-direction: column; gap: 12px; }
-.jig-piece { padding: 0; border: none; background: #fff; border-radius: 10px; box-shadow: 0 5px 0 #d8dde6; cursor: grab; touch-action: none; overflow: hidden; }
-.jig-piece:active { cursor: grabbing; }
+/* ============ PICTURE PIECES — real interlocking jigsaw ============ */
+.jig-game { display: flex; flex-direction: column; align-items: center; gap: clamp(8px, 1.6vh, 16px);
+  padding: 50px 12px 16px; overflow-y: auto; }
+.jig-top { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: center; }
+/* puzzle-table layout: assembly board + a piece tray. Side-by-side on wide screens
+   (board left, tray right), stacked on phones — so 16 pieces never overlap the board. */
+.jig-stage { display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: clamp(14px, 3vw, 36px); width: 100%; }
+.jig-tray-panel { display: grid; place-items: center; background: rgba(255,255,255,.22);
+  border-radius: 20px; padding: 12px; box-shadow: inset 0 0 0 2px rgba(255,255,255,.4); }
+@media (min-width: 760px) {
+  .jig-stage { flex-direction: row; align-items: stretch; }
+  .jig-tray-panel { align-self: stretch; min-width: 300px; }
+  .jig-tray { max-height: var(--tray-h, 380px); overflow-y: auto; }
+}
+@media (max-width: 759px) {
+  .jig-tray-panel { width: min(94vw, 420px); }
+  .jig-tray { max-height: 32vh; overflow-y: auto; }
+}
+.jig-levels { display: inline-flex; gap: 8px; }
+.jig-lvl { display: inline-flex; flex-direction: column; align-items: center; min-width: 70px; padding: 6px 14px;
+  font-family: var(--font); color: var(--ink); background: rgba(255,255,255,.5); border: 3px solid transparent;
+  border-radius: 16px; cursor: pointer; transition: transform .12s, border-color .15s, background .15s; }
+.jig-lvl b { font-size: 15px; font-weight: 800; line-height: 1.1; }
+.jig-lvl small { font-size: 11px; font-weight: 600; opacity: .75; }
+.jig-lvl.on { background: #fff; border-color: var(--sky-btn); box-shadow: 0 4px 0 rgba(0,0,0,.1); }
+.jig-lvl:active { transform: translateY(2px); }
+.jig-board { position: relative; display: grid; gap: 0; border-radius: 16px;
+  background: rgba(255,255,255,.28); box-shadow: inset 0 0 0 3px rgba(255,255,255,.55); }
+.jig-guide { position: absolute; inset: 0; display: grid; place-items: center; opacity: .15;
+  pointer-events: none; transition: opacity .45s ease; }
+.jig-board.peek .jig-guide { opacity: .55; }
+.jig-slot { position: relative; }
+.jig-slot.targetable::after { content: ''; position: absolute; inset: 8%; border-radius: 10px;
+  box-shadow: 0 0 0 3px var(--gold); pointer-events: none; }
+.jig-slot.wrong::after { content: ''; position: absolute; inset: 4%; border-radius: 10px;
+  background: rgba(255,75,75,.4); animation: jigWrong .46s ease; pointer-events: none; }
+@keyframes jigWrong { 0%, 100% { opacity: 0; } 30% { opacity: 1; } }
+.jig-fit { position: absolute; animation: jigSnap .42s var(--pop); }
+@keyframes jigSnap { 0% { transform: scale(1.22); } 60% { transform: scale(.95); } 100% { transform: scale(1); } }
+.jig-art { position: absolute; left: 0; top: 0; overflow: hidden; }
+.jig-img { position: absolute; left: 0; top: 0; display: grid; place-items: center; }
+.jig-edge { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none;
+  filter: drop-shadow(0 2px 2px rgba(0,0,0,.22)); }
+.jig-tray { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; align-content: center;
+  align-items: center; max-width: 340px; min-height: 70px; }
+.jig-piece { position: relative; padding: 0; border: none; background: none; cursor: pointer;
+  touch-action: manipulation; transition: transform .14s var(--pop), filter .15s; }
+.jig-piece .jig-pc-in { position: absolute; left: 0; top: 0; transform-origin: top left; }
+.jig-piece.sel { transform: translateY(-6px) scale(1.14); z-index: 3;
+  filter: drop-shadow(0 0 3px var(--gold)) drop-shadow(0 0 2px var(--gold)); }
+.jig-piece:active { transform: translateY(2px); }
+.jig-progress { display: flex; align-items: center; gap: 10px; }
+.jig-bar { width: clamp(120px, 42vw, 240px); height: 14px; background: rgba(0,0,0,.16); border-radius: 99px; overflow: hidden; }
+.jig-bar i { display: block; height: 100%; background: var(--grass); border-radius: 99px; transition: width .3s var(--pop); }
+.jig-progress b { color: #fff; font-weight: 800; text-shadow: 0 2px 0 rgba(0,0,0,.15); }
 
 /* ============ NEW GAMES: EGG SURPRISE ============ */
 .egg-row { display: flex; gap: clamp(10px, 3.5vw, 28px); flex-wrap: wrap; justify-content: center; margin: auto; }
@@ -716,30 +810,114 @@ button:focus-visible, [tabindex]:focus-visible { outline: 4px solid #fff; outlin
 @keyframes shellL { to { transform: translate(-52px, 44px) rotate(-50deg); opacity: 0; } }
 @keyframes shellR { to { transform: translate(52px, 44px) rotate(50deg); opacity: 0; } }
 
-/* ============ MYSTERY BOXES ============ */
-.boxes-stage { position: relative; width: 420px; max-width: 92%; height: 220px; margin: auto; display: flex; justify-content: center; align-items: flex-end; perspective: 800px; }
-.mbox { position: absolute; bottom: 24px; width: 110px; height: 110px; background: none; border: none; cursor: pointer; padding: 0;
+/* ============ MYSTERY BOXES — premium wooden treasure chest ============
+   A chunky toy treasure trunk: warm wood-plank base, twin riveted brass bands,
+   a domed hinged lid with an overhanging lip, and a gold keyhole clasp on the
+   body that GLOWS when the lid lifts (reads as "unlocked!"). The lid opens on a
+   CHILD element (.mbox-lid) so it never fights the .mbox translateX shuffle.
+   Synthesised from a 4-way design panel (Captain's Chest base + grafts). */
+.boxes-stage { position: relative; width: 420px; max-width: 92%; height: 220px; margin: auto; display: flex; justify-content: center; align-items: flex-end; perspective: 820px; }
+.mbox { position: absolute; bottom: 24px; width: 118px; height: 116px; background: none; border: none; cursor: pointer; padding: 0;
   transition: transform .55s var(--pop); transform-style: preserve-3d; }
-.mbox-body { position: absolute; inset: 18px 0 0; background: linear-gradient(160deg, #b07b4f, #8d5a32); border-radius: 10px;
-  box-shadow: inset 0 -12px 0 rgba(0,0,0,.18), 0 6px 0 rgba(0,0,0,.22); }
-.mbox-lid { position: absolute; top: 6px; left: -6px; right: -6px; height: 26px; background: linear-gradient(160deg, #c98f5e, #a06a3c);
-  border-radius: 8px; box-shadow: 0 4px 0 rgba(0,0,0,.18); transform-origin: 50% 0; transition: transform .4s var(--pop); z-index: 2; }
-.mbox.open .mbox-lid { transform: rotateX(120deg) translateY(-8px); }
-.mbox-friend { position: absolute; left: 50%; top: 26px; transform: translateX(-50%); animation: hatchUp .45s var(--pop); }
 .mbox:disabled { cursor: default; }
+.mbox:focus-visible { outline: none; }
+.mbox:focus-visible .mbox-base { box-shadow: inset 0 3px 0 rgba(255,224,178,.45), inset 0 -10px 14px rgba(40,18,4,.4), 0 7px 0 #5e3a20, 0 0 0 4px var(--sky-btn); }
+
+/* soft ground shadow */
+.mbox-shadow { position: absolute; left: 50%; bottom: -10px; width: 104px; height: 22px; transform: translateX(-50%);
+  background: radial-gradient(ellipse at center, rgba(40,18,4,.34), rgba(40,18,4,0) 70%); filter: blur(1px); z-index: 0;
+  transition: transform .4s var(--pop), opacity .4s var(--pop); }
+
+/* wooden trunk base with vertical plank grain + a deep hollow interior */
+.mbox-base { position: absolute; left: 0; right: 0; bottom: 0; height: 80px; border-radius: 12px 12px 16px 16px;
+  background:
+    repeating-linear-gradient(90deg, rgba(60,30,10,.22) 0 1px, rgba(255,210,150,.10) 1px 3px, rgba(60,30,10,0) 3px 26px),
+    linear-gradient(180deg, #a9744a 0%, #935f37 46%, #7a4d2b 100%);
+  box-shadow: inset 0 3px 0 rgba(255,224,178,.45), inset 0 -16px 22px rgba(40,18,4,.45),
+    inset 4px 0 8px rgba(40,18,4,.22), inset -4px 0 8px rgba(40,18,4,.22), 0 7px 0 #5e3a20, 0 12px 14px rgba(40,18,4,.3);
+  z-index: 1; }
+/* dark inner lip — fades in on open so the trunk reads as hollow */
+.mbox-base::before { content: ""; position: absolute; left: 9px; right: 9px; top: 4px; height: 16px; border-radius: 10px 10px 4px 4px;
+  background: linear-gradient(180deg, #34200f, #5a3a20); box-shadow: inset 0 4px 6px rgba(0,0,0,.55);
+  opacity: 0; transition: opacity .35s var(--pop) .1s; }
+
+/* twin riveted brass bands (vertical straps) */
+.mbox-band { position: absolute; width: 16px; border-radius: 4px; z-index: 3;
+  background: linear-gradient(90deg, var(--gold-deep) 0%, var(--gold) 32%, #fff2c4 50%, var(--gold) 68%, var(--gold-deep) 100%);
+  box-shadow: inset 0 0 0 1px rgba(120,72,0,.45), inset 0 2px 1px rgba(255,255,255,.55), 0 1px 2px rgba(40,18,4,.35); }
+.mbox-band::before, .mbox-band::after { content: ""; position: absolute; left: 50%; width: 6px; height: 6px; transform: translateX(-50%);
+  border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff6d8, var(--gold-deep) 70%, #9a6500); box-shadow: 0 1px 1px rgba(40,18,4,.5); }
+.mbox-band::before { top: 5px; } .mbox-band::after { bottom: 5px; }
+.band-l, .band-r { top: 8px; bottom: 9px; }       /* straps on the base */
+.band-l { left: 24px; } .band-r { right: 24px; }
+.lid-band-l, .lid-band-r { top: 4px; bottom: 5px; } /* straps on the lid face, aligned over the base */
+.lid-band-l { left: 22px; } .lid-band-r { right: 22px; }
+
+/* domed hinged lid — hinges at its bottom/seam edge (reads as opening up & back) */
+.mbox-lid { position: absolute; left: -2px; right: -2px; top: 8px; height: 46px; z-index: 4;
+  transform-origin: 50% 100%; transform: rotateX(0deg); transition: transform .5s var(--pop); transform-style: preserve-3d; }
+.mbox-lid-face { position: absolute; inset: 0; border-radius: 26px 26px 8px 8px;
+  background:
+    repeating-linear-gradient(90deg, rgba(60,30,10,.2) 0 1px, rgba(255,210,150,.1) 1px 3px, rgba(60,30,10,0) 3px 26px),
+    radial-gradient(120% 150% at 50% -30%, #c08a5a 0%, #a9744a 40%, #8a5732 100%);
+  box-shadow: inset 0 4px 2px rgba(255,228,184,.55), inset 0 -8px 10px rgba(40,18,4,.38), 0 3px 0 #6e4526; }
+/* curved sheen arc across the dome */
+.mbox-lid-face::after { content: ""; position: absolute; left: 14%; right: 14%; top: 6px; height: 12px; border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(255,236,200,.6), rgba(255,236,200,0) 72%); }
+/* chunky overhanging lip — the clearest "this is a closeable lid" signal */
+.mbox-lid-rim { position: absolute; left: -2px; right: -2px; bottom: -6px; height: 13px; border-radius: 7px;
+  background: linear-gradient(180deg, #8a5732, #6e4526); box-shadow: inset 0 2px 0 rgba(255,224,178,.35), 0 3px 4px rgba(40,18,4,.3); }
+
+/* gold keyhole clasp on the body front — glows when unlocked (lid open) */
+.mbox-clasp { position: absolute; left: 50%; top: 4px; width: 26px; height: 30px; transform: translateX(-50%); z-index: 5;
+  border-radius: 6px 6px 9px 9px; background: linear-gradient(180deg, #fff2c4 0%, var(--gold) 38%, var(--gold-deep) 100%);
+  box-shadow: inset 0 0 0 1.5px rgba(120,72,0,.5), inset 0 2px 1px rgba(255,255,255,.7), 0 2px 3px rgba(40,18,4,.4);
+  transition: box-shadow .35s var(--pop); }
+.mbox-keyhole { position: absolute; left: 50%; top: 8px; width: 6px; height: 6px; transform: translateX(-50%); border-radius: 50%;
+  background: #5a3a1a; box-shadow: 0 6px 0 -1px #5a3a1a, inset 0 1px 1px rgba(0,0,0,.6); }
+
+.mbox-friend { position: absolute; left: 50%; top: 16px; transform: translateX(-50%); z-index: 7; pointer-events: none;
+  filter: drop-shadow(0 4px 6px rgba(40,18,4,.35)); animation: chestPop .5s var(--pop) both; }
+@keyframes chestPop {
+  0%   { transform: translateX(-50%) translateY(34px) scale(.25); opacity: 0; }
+  60%  { opacity: 1; }
+  100% { transform: translateX(-50%) translateY(0) scale(1); opacity: 1; }
+}
+
+/* OPEN: lid swings up & back, clasp glows, hollow interior shows */
+.mbox.open .mbox-lid { transform: rotateX(-104deg); }
+.mbox.open .mbox-base::before { opacity: 1; }
+.mbox.open .mbox-clasp { box-shadow: inset 0 0 0 1.5px rgba(120,72,0,.5), inset 0 2px 1px rgba(255,255,255,.7), 0 0 12px 3px rgba(255,200,61,.75); }
+.mbox.open .mbox-shadow { transform: translateX(-50%) scale(1.05); opacity: .85; }
+
+@media (prefers-reduced-motion: reduce) {
+  .mbox-friend { animation-duration: .01s; }
+  .mbox.open .mbox-lid { transition-duration: .2s; }
+}
 
 /* ============ PRIZE WHEEL ============ */
-.wheel-scene { position: relative; width: 280px; height: 230px; margin: auto; perspective: 1100px; cursor: grab; }
-.wheel-scene:active { cursor: grabbing; }
-.wheel-pin { position: absolute; top: -6px; left: 50%; transform: translateX(-50%); width: 0; height: 0; z-index: 5;
-  border-left: 14px solid transparent; border-right: 14px solid transparent; border-top: 22px solid var(--gold); filter: drop-shadow(0 3px 0 rgba(0,0,0,.25)); }
-.wheel-ring { position: absolute; inset: 0; transform-style: preserve-3d; }
-.wheel-ring.easing { transition: transform 1.25s cubic-bezier(.17, .67, .27, 1); }
-.wheel-card { position: absolute; left: 50%; top: 50%; width: 120px; height: 150px; margin: -75px 0 0 -60px;
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
-  background: #fff; border-radius: 16px; box-shadow: inset 0 0 0 4px rgba(0,0,0,.06);
-  backface-visibility: hidden; -webkit-backface-visibility: hidden; pointer-events: none; }
-.wheel-card b { font-family: var(--font); font-size: 16px; color: var(--ink); }
+/* now a <button> (tap to spin) — reset button chrome, keep the 3D perspective */
+/* Prize Wheel — a flat spin-wheel: all 6 cards visible in coloured wedges, a fixed
+   pointer at the top, a "Spin!" hub in the centre. Tapping spins it (rot via JS). */
+.pw-scene { position: relative; margin: auto;          /* width/height set inline (responsive) */
+  border: none; background: none; padding: 0; font: inherit; color: inherit; display: block; cursor: pointer; }
+.pw-scene:disabled { cursor: default; }
+.pw-pointer { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); width: 0; height: 0; z-index: 4;
+  border-left: 16px solid transparent; border-right: 16px solid transparent; border-top: 26px solid var(--gold);
+  filter: drop-shadow(0 3px 0 rgba(0,0,0,.25)); }
+.pw-wheel { position: absolute; inset: 0; border-radius: 50%;
+  box-shadow: 0 8px 0 rgba(0,0,0,.14), 0 16px 34px rgba(0,0,0,.22), inset 0 0 0 7px rgba(255,255,255,.6); }
+.pw-wheel.spinning { transition: transform 1.3s cubic-bezier(.16, .7, .2, 1); }
+.pw-wheel.spinning .pw-card { transition: transform 1.3s cubic-bezier(.16, .7, .2, 1); } /* counter-spin in sync so cards stay upright */
+.pw-seg { position: absolute; left: 50%; top: 50%; display: grid; place-items: center; pointer-events: none; }
+.pw-card { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+  padding: 9px 5px; background: rgba(255,255,255,.96); border-radius: 16px; box-shadow: 0 3px 0 rgba(0,0,0,.12); } /* width set inline */
+.pw-card b { font-family: var(--font); font-size: 14px; font-weight: 800; color: var(--ink); }
+.pw-hub { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 3;
+  border-radius: 50%; background: #fff; display: grid; place-items: center; align-content: center; gap: 1px;
+  color: var(--sky-btn); box-shadow: 0 5px 0 #cfd6e0, 0 8px 16px rgba(0,0,0,.18); } /* width/height set inline */
+.pw-hub b { font-family: var(--font); font-size: 14px; font-weight: 800; color: var(--ink); }
+.pw-scene:not(:disabled):active .pw-hub { transform: translate(-50%, -50%) scale(.93); }
 
 /* ============ MAGIC DOORS ============ */
 .hall { display: flex; gap: clamp(12px, 4vw, 34px); justify-content: center; margin: auto; perspective: 900px; }
@@ -820,15 +998,77 @@ button:focus-visible, [tabindex]:focus-visible { outline: 4px solid #fff; outlin
 .balloon.popped .balloon-skin { animation: bubPop .35s ease forwards; }
 .balloon.popped .balloon-string { opacity: 0; }
 
+/* ============ PERSISTENT NAV DOCK (Adventure · Play · Stories) ============ */
+/* A floating rounded pill, fixed at the bottom over every screen. Sits below the
+   modals (z 60) and the top HUD (z 50). Every screen reserves --dock-h of bottom
+   space so footers/controls never hide behind it. */
+.dock { position: fixed; left: 0; right: 0; bottom: 0; z-index: 45;
+  display: flex; justify-content: center; pointer-events: none;
+  padding: 0 12px calc(10px + env(safe-area-inset-bottom, 0px)); }
+.dock-bar { pointer-events: auto; display: inline-flex; align-items: stretch; gap: 6px;
+  max-width: calc(100vw - 24px); background: #fbf4e2; border-radius: var(--r-full); padding: 7px;
+  box-shadow: 0 -2px 0 rgba(0,0,0,.04), 0 10px 26px rgba(0,0,0,.24); }
+.dock-tab { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  min-width: 86px; min-height: 52px; padding: 5px 16px; border: none; background: none; cursor: pointer;
+  font-family: var(--font); font-size: 13.5px; font-weight: 800; color: #565c6b;
+  border-radius: var(--r-full); transition: transform .12s, background .16s, color .16s; }
+.dock-tab .dock-ico { display: grid; place-items: center; line-height: 0; }
+/* soft, balanced shadow (no hard 0-4px-0 lip — that read as uneven bottom padding) */
+.dock-tab.active { background: linear-gradient(165deg, #3183cf, #1c5fa8); color: #fff;
+  text-shadow: 0 1px 1.5px rgba(0,0,0,.32);
+  box-shadow: 0 3px 10px rgba(28,95,168,.5); }
+.dock-tab:not(.active):hover { color: var(--ink); background: rgba(0,0,0,.05); }
+.dock-tab:active { transform: translateY(2px); }
+/* reserve bottom space on every screen so nothing hides behind the dock. Only the
+   OUTER container per screen reserves it — the comic's .story-level is always nested
+   inside .level (story-wrap), so padding only the .level avoids double-reserving. */
+.world { padding-bottom: var(--dock-h); }
+.level { padding-bottom: var(--dock-h); }
+
 /* ============ STORY LAND ============ */
-.story-fab { display: inline-flex; align-items: center; gap: 8px; font-family: var(--font); font-size: 17px; font-weight: 700;
-  color: #fff; background: linear-gradient(160deg, #7e57c2, #5e35b1); border: none; border-radius: var(--r-full);
-  padding: 10px 20px; min-height: 48px; cursor: pointer; box-shadow: 0 5px 0 #4527a0, 0 10px 18px rgba(0,0,0,.18);
-  transition: transform .12s; }
-.story-fab:active { transform: translateY(5px); box-shadow: 0 0 0 #4527a0; }
-.sf-book { font-size: 20px; }
 .storyland { background: linear-gradient(180deg, #5e35b1, #9575cd 70%, #7e57c2); }
 .story-wrap { background: linear-gradient(180deg, #5e35b1, #9575cd); }
+
+/* ============ PIP'S PLAYGROUND (top-level Play room) ============ */
+/* Sunny sky -> meadow so the rainbow-coloured game tiles pop; a faint confetti
+   dot-scatter adds depth instead of a flat fill. */
+.playground { background:
+    radial-gradient(circle at 18% 12%, rgba(255,255,255,.45) 1.6px, transparent 1.6px) 0 0 / 30px 30px,
+    radial-gradient(circle at 70% 40%, rgba(255,255,255,.30) 1.4px, transparent 1.4px) 8px 12px / 34px 34px,
+    linear-gradient(180deg, #4fc3f7, #8fd9f5 46%, #c6ecb6); }
+/* --- carnival banner: the signature that makes Play a destination --- */
+.pg-banner { position: relative; max-width: 760px; width: 100%; margin: 16px auto 4px;
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  padding: 30px 18px 14px; }
+.pg-bunting { position: absolute; top: 0; left: 0; right: 0; display: flex; justify-content: space-between;
+  padding: 0 4px; filter: drop-shadow(0 3px 2px rgba(0,0,0,.16)); }
+.pg-bunting i { width: 0; height: 0; border-left: 14px solid transparent; border-right: 14px solid transparent;
+  border-top: 22px solid var(--gold); transform-origin: top center; animation: buntSway 3.4s ease-in-out infinite; }
+.pg-bunting i:nth-child(5n+1) { border-top-color: #ff6f6f; animation-delay: -.2s; }
+.pg-bunting i:nth-child(5n+2) { border-top-color: #ffc83d; animation-delay: -.6s; }
+.pg-bunting i:nth-child(5n+3) { border-top-color: #58cc02; animation-delay: -1s; }
+.pg-bunting i:nth-child(5n+4) { border-top-color: #1cb0f6; animation-delay: -1.4s; }
+.pg-bunting i:nth-child(5n+5) { border-top-color: #a560e8; animation-delay: -1.8s; }
+@keyframes buntSway { 0%, 100% { transform: rotate(-5deg); } 50% { transform: rotate(5deg); } }
+.pg-mascot { filter: drop-shadow(0 5px 0 rgba(0,0,0,.12)); animation: pgBob 3s ease-in-out infinite; }
+@keyframes pgBob { 0%, 100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(-7px) rotate(2deg); } }
+.pg-tagline { font-family: var(--font); font-size: clamp(15px, 2.4vw, 18px); font-weight: 700; color: #fff;
+  text-shadow: 0 2px 0 rgba(0,0,0,.2); }
+/* --- shelves --- */
+.pg-shelf { max-width: 760px; width: 100%; margin: 0 auto 14px; }
+.pg-shelf-label { display: inline-flex; align-items: center; gap: 8px; margin: 6px 0 10px;
+  font-family: var(--font); font-size: 16.5px; font-weight: 800; color: var(--ink);
+  background: #fff; border-radius: var(--r-full); padding: 7px 16px 7px 12px; box-shadow: 0 4px 0 rgba(0,0,0,.12); }
+.pg-shelf-emoji { font-size: 20px; }
+/* toy-box tiles: own staggered entrance that settles to a subtle hand-placed
+   tilt (per-tile via --tilt); hover/press straightens + lifts. */
+.playground .hub-tile { animation: pgTileIn .5s var(--pop) both; }
+@keyframes pgTileIn { from { opacity: 0; transform: translateY(24px) scale(.9) rotate(0); } to { transform: rotate(var(--tilt, 0deg)); } }
+.playground .hub-grid .hub-tile:nth-child(3n+1) { --tilt: -1.5deg; }
+.playground .hub-grid .hub-tile:nth-child(3n+2) { --tilt: 1.2deg; }
+.playground .hub-grid .hub-tile:nth-child(3n) { --tilt: -.5deg; }
+.playground .hub-tile:hover { transform: translateY(-3px) rotate(0deg); }
+.playground .hub-tile:active { transform: translateY(6px) rotate(0deg); }
 .shelf-scene { position: relative; flex: 1; display: grid; place-items: center; min-height: 0; }
 .book-row { display: flex; gap: clamp(14px, 4vw, 36px); flex-wrap: wrap; justify-content: center; padding: 0 18px; }
 .book-cover { position: relative; width: 188px; min-height: 230px; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 9px;
@@ -1128,7 +1368,8 @@ html[data-tone="warm"] .tone-overlay { background: rgba(255, 168, 50, 0.22);
 [data-motion="off"] .hub-tile, [data-motion="off"] .story-pip, [data-motion="off"] .fountain-ring,
 [data-motion="off"] .tunnel-ring, [data-motion="off"] .balloon, [data-motion="off"] .tower.sway,
 [data-motion="off"] .sprop, [data-motion="off"] .comic-cast, [data-motion="off"] .burst2 i,
-[data-motion="off"] .peek-pop, [data-motion="off"] .breath-flower { animation: none !important; }
+[data-motion="off"] .peek-pop, [data-motion="off"] .breath-flower,
+[data-motion="off"] .pg-bunting i, [data-motion="off"] .pg-mascot { animation: none !important; }
 
 @media (prefers-reduced-motion: reduce) {
   * { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }
@@ -1137,6 +1378,12 @@ html[data-tone="warm"] .tone-overlay { background: rgba(255, 168, 50, 0.22);
 @media (max-width: 560px) {
   .qgrid2 { grid-template-columns: repeat(2, minmax(140px, 1fr)); }
   .level-stage { padding-inline: 56px; }
+  /* Phone HUD: destinations now live in the bottom dock, so the top bar is just
+     identity + utilities. Trim the brand to "Pip!" and shrink the pills so it all
+     sits on one tidy row. */
+  .hb-x { display: none; }
+  .world-hud .hud-pill { height: 44px; padding: 0 12px; font-size: 16px; }
+  .world-hud .hud-utils .gbtn.round { min-height: 44px !important; width: 44px !important; }
 }
 /* Desktop: let the story fill far more of the screen while staying tightly
    composed (not stretched into tall empty columns). Scales with the viewport,

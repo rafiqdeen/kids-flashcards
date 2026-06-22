@@ -138,6 +138,12 @@ async function main() {
       await page.waitForSelector('[data-testid="level-complete"]', { timeout: 6000 });
       const stars = await page.$$eval('.bigstars .bstar', (els) => els.filter((e) => !e.classList.contains('empty')).length);
       ok('quiz all-correct -> 3 stars', stars === 3, `stars=${stars}`);
+      // "Try again" must actually RESTART the quiz (remount, not a dead tap)
+      await page.click('[data-testid="complete-retry"]');
+      await page.waitForTimeout(300);
+      const restarted = !(await page.$('[data-testid="level-complete"]')) && !!(await page.$('.qprompt b'))
+        && (await page.$eval('.level-bar i', (e) => parseFloat(e.style.width) || 0)) < 50; // progress reset to the first question
+      ok('quiz "Try again" restarts the quiz', restarted);
       await ctx.close();
     }
 
@@ -197,7 +203,7 @@ async function main() {
       const { ctx, page } = await newPage();
       await page.goto(base, { waitUntil: 'networkidle' });
       await seed(page, { animals: { learnStars: 3 } });
-      await page.click('[data-testid="node-animals-activity"]');
+      await page.click('[data-testid="open-play"]');
       await page.waitForSelector('[data-testid="activity-hub"]');
       const tiles = await page.$$eval('[data-testid^="activity-"]', (els) => els.length);
       ok('activity hub shows game tiles', tiles >= 4, `tiles=${tiles}`);
@@ -217,7 +223,7 @@ async function main() {
         localStorage.setItem('pip-adv-set-p1', JSON.stringify({ voice: true, sfx: true, music: false, motion: true, difficulty: 'normal', buddy: 'pip', disabled: ['shadow'] }));
       });
       await page.reload({ waitUntil: 'networkidle' });
-      await page.click('[data-testid="node-animals-activity"]');
+      await page.click('[data-testid="open-play"]');
       await page.waitForSelector('[data-testid="activity-hub"]');
       const shadowGone = !(await page.$('[data-testid="activity-shadow"]'));
       const pipsaysThere = !!(await page.$('[data-testid="activity-pipsays"]'));
@@ -241,6 +247,38 @@ async function main() {
       await page.click('[data-testid="choice-boat"]');
       await page.waitForSelector('[data-testid="story-next"]', { timeout: 6000 });
       ok('choose-your-path advances on a choice', true);
+      await ctx.close();
+    }
+
+    // 8a. Persistent nav dock: 3 destinations, active state tracks the route, and
+    // it stays present inside a sub-screen (a game).
+    {
+      const { ctx, page } = await newPage();
+      await page.goto(base, { waitUntil: 'networkidle' });
+      await seed(page);
+      const tabs = await page.$$eval('.dock-tab', (els) => els.length);
+      ok('dock shows 3 destinations', tabs === 3, `tabs=${tabs}`);
+      ok('Adventure tab active on the world map', (await page.getAttribute('[data-testid="open-adventure"]', 'aria-current')) === 'page');
+      await page.click('[data-testid="open-play"]');
+      await page.waitForSelector('[data-screen-label="Playground"]', { timeout: 6000 });
+      ok('dock Play opens the Playground', (await page.getAttribute('[data-testid="open-play"]', 'aria-current')) === 'page');
+      await page.click('[data-testid="open-story"]');
+      await page.waitForSelector('[data-screen-label="Story Land"]', { timeout: 6000 });
+      ok('dock Stories opens Story Land', (await page.getAttribute('[data-testid="open-story"]', 'aria-current')) === 'page');
+      await page.click('[data-testid="open-adventure"]');
+      await page.waitForSelector('[data-screen-label="World map"]', { timeout: 6000 });
+      ok('dock Adventure returns to the map', true);
+      // persistence: open a game, dock is still there
+      await page.click('[data-testid="open-play"]');
+      await page.waitForSelector('[data-testid="activity-pipsays"]');
+      await page.click('[data-testid="activity-pipsays"]');
+      await page.waitForTimeout(300);
+      ok('dock persists inside a game', !!(await page.$('[data-testid="dock"]')));
+      ok('game is open (shelf hidden)', !(await page.$('[data-testid="activity-hub"]')));
+      // re-tapping the ALREADY-active Play tab returns to the Playground shelf
+      await page.click('[data-testid="open-play"]');
+      await page.waitForSelector('[data-testid="activity-hub"]', { timeout: 4000 });
+      ok('re-tapping active Play returns to the shelf', !!(await page.$('[data-testid="activity-hub"]')));
       await ctx.close();
     }
 
@@ -322,7 +360,7 @@ async function main() {
       const { ctx, page } = await newPage();
       await page.goto(base, { waitUntil: 'networkidle' });
       await seed(page, { animals: { learnStars: 3 } });
-      await page.click('[data-testid="node-animals-activity"]');
+      await page.click('[data-testid="open-play"]');
       await page.click('[data-testid="activity-paint"]');
       await page.waitForSelector('[data-screen-label="Paint studio"]');
       ok('paint "done" disabled before drawing', await page.isDisabled('[data-testid="paint-done"]'));
@@ -346,7 +384,7 @@ async function main() {
       const { ctx, page } = await newPage();
       await page.goto(base, { waitUntil: 'networkidle' });
       await seed(page, { animals: { learnStars: 3 } });
-      await page.click('[data-testid="node-animals-activity"]');
+      await page.click('[data-testid="open-play"]');
       await page.click('[data-testid="activity-paint"]');
       await page.waitForSelector('[data-screen-label="Paint studio"]');
       await page.click('[data-testid="paint-clear"]');
@@ -360,22 +398,28 @@ async function main() {
       const { ctx, page } = await newPage();
       await page.goto(base, { waitUntil: 'networkidle' });
       await seed(page, { animals: { learnStars: 3 } });
-      await page.click('[data-testid="node-animals-activity"]');
+      await page.click('[data-testid="open-play"]');
       await page.click('[data-testid="activity-paint"]');
       await page.waitForSelector('[data-screen-label="Paint studio"]');
 
-      const box = await (await page.$('[data-testid="paint-canvas"]')).boundingBox();
       const ink = () => page.evaluate(() => {
         const c = document.querySelector('[data-testid="paint-canvas"]');
         const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data;
         let n = 0; for (let i = 3; i < d.length; i += 4) if (d[i] > 10) n++;
         return n;
       });
+      // re-read the live canvas box on every stroke — the canvas fits its container,
+      // so its on-screen size/position can settle/shift; a cached box drifts.
       const stroke = async (x0, y0, x1, y1) => {
+        const box = await (await page.$('[data-testid="paint-canvas"]')).boundingBox();
         await page.mouse.move(box.x + box.width * x0, box.y + box.height * y0);
         await page.mouse.down();
         await page.mouse.move(box.x + box.width * x1, box.y + box.height * y1, { steps: 8 });
         await page.mouse.up();
+      };
+      const tap = async (x, y) => {
+        const box = await (await page.$('[data-testid="paint-canvas"]')).boundingBox();
+        await page.mouse.click(box.x + box.width * x, box.y + box.height * y);
       };
       const checked = (sel) => page.getAttribute(sel, 'aria-checked');
 
@@ -425,7 +469,7 @@ async function main() {
       ok('stamp shows its shapes', (await page.$$('[data-testid^="paint-stamp-"]')).length === 6);
       await page.click('[data-testid="paint-stamp-heart"]');
       const beforeStamp = await ink();
-      await page.mouse.click(box.x + box.width * 0.5, box.y + box.height * 0.2);
+      await tap(0.5, 0.2);
       ok('stamp adds ink', (await ink()) > beforeStamp);
 
       // template switch swaps the guide outline
@@ -438,7 +482,7 @@ async function main() {
       await page.waitForTimeout(150);
       await page.click('[data-testid="paint-tool-fill"]');
       const beforeFill = await ink();
-      await page.mouse.click(box.x + box.width * 0.5, box.y + box.height * 0.5);
+      await tap(0.5, 0.5);
       await page.waitForTimeout(120);
       ok('magic fill floods the page', (await ink()) > beforeFill + 100000, `${beforeFill}->${await ink()}`);
 
@@ -453,7 +497,7 @@ async function main() {
       const { ctx, page } = await newPage();
       await page.goto(base, { waitUntil: 'networkidle' });
       await seed(page, { animals: { learnStars: 3 } });
-      await page.click('[data-testid="node-animals-activity"]');
+      await page.click('[data-testid="open-play"]');
       await page.click('[data-testid="activity-paint"]');
       await page.waitForSelector('[data-screen-label="Paint studio"]');
       await page.click('[aria-label="Red"]');
@@ -502,7 +546,7 @@ async function main() {
       const { ctx, page } = await newPage();
       await page.goto(base, { waitUntil: 'networkidle' });
       await seed(page, { animals: { learnStars: 3 } });
-      await page.click('[data-testid="node-animals-activity"]');
+      await page.click('[data-testid="open-play"]');
       await page.click('[data-testid="activity-paint"]');
       await page.waitForSelector('[data-screen-label="Paint studio"]');
       const box = await (await page.$('[data-testid="paint-canvas"]')).boundingBox();
@@ -562,7 +606,7 @@ async function main() {
       const { ctx, page } = await newPage();
       await page.goto(base, { waitUntil: 'networkidle' });
       await seed(page, { animals: { learnStars: 3 } });
-      await page.click('[data-testid="node-animals-activity"]');
+      await page.click('[data-testid="open-play"]');
       await page.click('[data-testid="activity-paint"]');
       await page.waitForSelector('[data-screen-label="Paint studio"]');
       const box = await (await page.$('[data-testid="paint-canvas"]')).boundingBox();
@@ -597,7 +641,7 @@ async function main() {
       const { ctx, page } = await newPage();
       await page.goto(base, { waitUntil: 'networkidle' });
       await seed(page, { animals: { learnStars: 3 } });
-      await page.click('[data-testid="node-animals-activity"]');
+      await page.click('[data-testid="open-play"]');
       await page.click('[data-testid="activity-paint"]');
       await page.waitForSelector('[data-screen-label="Paint studio"]');
       const box = await (await page.$('[data-testid="paint-canvas"]')).boundingBox();
@@ -662,6 +706,113 @@ async function main() {
       await page.waitForTimeout(80);
       ok('shape stamp adds ink', (await ink()) > beforeS);
       await ctx.close();
+    }
+
+    // 10. Drag-free games: the 5 games that used drag/swipe are now completable by
+    //     TAP only (tap source -> tap target; tap to spin; tap to trace). Ages 2-6.
+    {
+      const openGame = async (page, id) => {
+        await page.goto(base, { waitUntil: 'networkidle' });
+        await seed(page);
+        await page.click('[data-testid="open-play"]');
+        await page.waitForSelector(`[data-testid="activity-${id}"]`, { timeout: 5000 });
+        await page.click(`[data-testid="activity-${id}"]`);
+        await page.waitForTimeout(400);
+      };
+      // ColorSort — tap a swatch then the matching monster; wrong target keeps the item
+      {
+        const { ctx, page } = await newPage();
+        await openGame(page, 'sort');
+        await page.click('.sort-item[aria-label="Blue"]');
+        const before = await page.$$eval('.sort-item[aria-label="Blue"]', (e) => e.length);
+        await page.click('[data-monster="red"]');
+        ok('ColorSort wrong target keeps the colour', (await page.$$eval('.sort-item[aria-label="Blue"]', (e) => e.length)) === before);
+        let g = 0;
+        while ((await page.$('.sort-item')) && g++ < 40) {
+          const item = await page.$('.sort-item'); if (!item) break;
+          const color = (await item.getAttribute('aria-label')).toLowerCase();
+          await item.click(); await page.click(`[data-monster="${color}"]`); await page.waitForTimeout(110);
+        }
+        ok('ColorSort completable by tap', await page.waitForSelector('text=All fed!', { timeout: 3000 }).then(() => true).catch(() => false));
+        await ctx.close();
+      }
+      // ShadowPuzzle + JigsawPuzzle — select a source, tap targets until placed; complete
+      const placement = async (id, source, slot, doneText, label) => {
+        const { ctx, page } = await newPage();
+        await openGame(page, id);
+        let g = 0;
+        while (g++ < 60) {
+          if (await page.$(`text=${doneText}`)) break;
+          const src = await page.$(source);
+          if (!src) { await page.waitForTimeout(180); continue; }
+          await src.click();
+          for (const s of await page.$$(slot)) { await s.click(); await page.waitForTimeout(55); }
+          await page.waitForTimeout(180);
+        }
+        ok(`${label} completable by tap`, await page.waitForSelector(`text=${doneText}`, { timeout: 3000 }).then(() => true).catch(() => false));
+        await ctx.close();
+      };
+      await placement('shadow', '.sort-item', '.shadow-slot:not(.filled)', 'Shadow master!', 'ShadowPuzzle');
+      await placement('jigsaw', '.jig-piece', '.jig-slot:not(.filled)', 'Puzzle master!', 'JigsawPuzzle');
+      // Jigsaw — switching difficulty (incl. to a SMALLER grid) must not crash; the
+      // board remounts fresh so stale piece indices can't blow up the render.
+      {
+        const { ctx, page } = await newPage();
+        await openGame(page, 'jigsaw');
+        await page.click('.jig-lvl:nth-child(3)'); // Hard (16)
+        await page.waitForTimeout(150);
+        await page.click('.jig-lvl:nth-child(1)'); // Easy (4) — the old crash case
+        await page.waitForTimeout(150);
+        await page.click('.jig-lvl:nth-child(2)'); // Medium (9)
+        await page.waitForTimeout(150);
+        const tiles = await page.$$eval('.jig-slot', (els) => els.length);
+        ok('Jigsaw difficulty switch does not crash', tiles === 9, `slots=${tiles}`);
+        await ctx.close();
+      }
+      // PrizeWheel — tap to spin rotates the wheel (no swipe)
+      {
+        const { ctx, page } = await newPage();
+        await openGame(page, 'wheel');
+        const r0 = await page.$eval('.pw-wheel', (e) => e.style.transform);
+        await page.click('[data-testid="wheel-spin"]');
+        await page.waitForTimeout(300);
+        ok('PrizeWheel tap spins the wheel', (await page.$eval('.pw-wheel', (e) => e.style.transform)) !== r0);
+        await ctx.close();
+      }
+      // Tracing — tapping the glowing dot advances the trace (no drag)
+      {
+        const { ctx, page } = await newPage();
+        await openGame(page, 'trace');
+        const off = () => page.$eval('svg path:nth-of-type(3)', (e) => e.getAttribute('stroke-dashoffset')).catch(() => 'gone');
+        const off0 = await off();
+        for (let i = 0; i <= 60; i++) {
+          const dot = await page.$('.trace-dot'); if (!dot) break;
+          const b = await dot.boundingBox(); if (b) await page.mouse.click(b.x + b.width / 2, b.y + b.height / 2);
+          await page.waitForTimeout(35);
+        }
+        await page.waitForTimeout(150);
+        ok('Tracing taps advance the trace', (await off()) !== off0);
+        await ctx.close();
+      }
+      // MysteryBoxes — premium treasure chest renders, never spoils (the friend is
+      // only in the DOM when a box is open), and is completable by tapping.
+      {
+        const { ctx, page } = await newPage();
+        await openGame(page, 'boxes');
+        ok('MysteryBoxes premium chest renders', !!(await page.$('.mbox-base')) && !!(await page.$('.mbox-clasp')));
+        // wait for the guess phase (lids closed): no friend may be in the DOM yet
+        await page.waitForFunction(() => /Where is/.test(document.querySelector('.game-ask')?.textContent || ''), null, { timeout: 9000 }).catch(() => {});
+        ok('MysteryBoxes does not spoil (no friend while closed)', (await page.$$('.mbox-friend')).length === 0);
+        let found = false;
+        for (let i = 0; i < 3 && !found; i++) {
+          const b = (await page.$$('.mbox'))[i]; if (b) await b.click();
+          await page.waitForTimeout(450);
+          if (await page.$('.mbox.open .mbox-friend')) found = true;
+          else await page.waitForTimeout(650); // wrong box re-closes
+        }
+        ok('MysteryBoxes reveals the friend on the correct box', found);
+        await ctx.close();
+      }
     }
 
     ok('console clean (no errors)', consoleErrors.length === 0, consoleErrors.slice(0, 3).join(' | '));

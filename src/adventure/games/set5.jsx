@@ -2,8 +2,10 @@
 // Balloon Float. Ported verbatim from adventure-activities5.jsx.
 import { useState, useEffect, useRef } from 'react';
 import { HeroMascot } from '../art/Mascot.jsx';
-import { advGamePool, cardArt, shuffle, NUM_WORDS } from './util.jsx';
+import { advGamePool, cardArt, shuffle, NUM_WORDS, SPEEDS } from './util.jsx';
+import { SpeedPills } from './SpeedPills.jsx';
 import { StarsModal as AdvStarsModal } from './StarsModal.jsx';
+import { advSfx } from '../audio.js';
 
 const BLOCK_COLORS = ['#ff4b4b', '#ffc83d', '#58cc02', '#1cb0f6', '#a560e8', '#ff9600'];
 
@@ -22,6 +24,7 @@ export function BlockStacker({ speak, onDone, I, Star, Burst }) {
     setDropping(true);
     const n = blocks.length + 1;
     setBlocks((b) => [...b, { k: n, c: BLOCK_COLORS[(n - 1) % BLOCK_COLORS.length], off: (Math.random() - .5) * 14 }]);
+    advSfx('tap');
     speak(NUM_WORDS[n] + '!');
     setTimeout(() => {
       setDropping(false);
@@ -63,12 +66,14 @@ export function TunnelRunner({ cat, speak, onDone, I, Star, Burst }) {
   const [items, setItems] = useState([]);
   const [target] = useState(pool[0]); // target is fixed for the whole run
   const [score, setScore] = useState(0);
+  const [spd, setSpd] = useState(1);
+  const mul = SPEEDS[spd].mul;
   const [end, setEnd] = useState(null);
   const [burst, setBurst] = useState(false);
   const wrongs = useRef(0);
   const stateRef = useRef({}); stateRef.current = { end, target };
 
-  useEffect(() => { const t = setTimeout(() => speak(`Things are flying at you! Tap every ${pool[0].word}!`), 500); return () => clearTimeout(t); }, []);
+  useEffect(() => { const t = setTimeout(() => speak(`Find the ${pool[0].word}!`), 500); return () => clearTimeout(t); }, []);
   useEffect(() => {
     if (end) return;
     const iv = setInterval(() => {
@@ -77,12 +82,12 @@ export function TunnelRunner({ cat, speak, onDone, I, Star, Burst }) {
         if (arr.length >= 4) return arr;
         const card = Math.random() < 0.5 ? s.target : pool[Math.floor(Math.random() * pool.length)];
         const k = Date.now() + Math.random();
-        setTimeout(() => setItems((a) => a.filter((x) => x.k !== k)), 4300);
+        setTimeout(() => setItems((a) => a.filter((x) => x.k !== k)), 4300 / mul);
         return [...arr, { k, card, x: 14 + Math.random() * 72, y: 22 + Math.random() * 46 }];
       });
-    }, 1100);
+    }, 1100 / mul);
     return () => clearInterval(iv);
-  }, [end]);
+  }, [end, spd]);
 
   const tap = (it) => {
     if (end || it.hit) return;
@@ -90,23 +95,25 @@ export function TunnelRunner({ cat, speak, onDone, I, Star, Burst }) {
       const ns = score + 1; setScore(ns);
       setItems((a) => a.map((x) => x.k === it.k ? { ...x, hit: true } : x));
       setTimeout(() => setItems((a) => a.filter((x) => x.k !== it.k)), 450);
+      advSfx('yes');
       speak(ns >= GOAL ? 'You caught them all!' : 'Got it!');
       if (ns >= GOAL) {
         const stars = wrongs.current === 0 ? 3 : wrongs.current <= 2 ? 2 : 1;
         setBurst(true); setTimeout(() => { setEnd({ stars }); onDone('tunnel', stars); }, 800);
       }
-    } else { wrongs.current += 1; speak(`That's the ${it.card.word}!`); }
+    } else { wrongs.current += 1; advSfx('no'); speak(`That's the ${it.card.word}!`); }
   };
 
   return (
     <div className="game-area tunnel" data-screen-label="Tunnel Runner">
-      <button className="qprompt game-ask" onClick={() => speak(`Tap every ${target.word}!`)}>
+      <button className="qprompt game-ask" onClick={() => speak(`Find the ${target.word}!`)}>
         <I n="sound" s={22} /> Tap every <b>{target.word}</b>!
       </button>
+      <SpeedPills value={spd} onChange={setSpd} />
       <div className="tunnel-scene">
         {[0, 1, 2, 3].map((i) => <span key={i} className="tunnel-ring" style={{ animationDelay: `${i * 1}s` }} aria-hidden="true" />)}
         {items.map((it) => (
-          <button key={it.k} className={`tunnel-item ${it.hit ? 'hit' : ''}`} style={{ left: `${it.x}%`, top: `${it.y}%` }}
+          <button key={it.k} className={`tunnel-item ${it.hit ? 'hit' : ''}`} style={{ left: `${it.x}%`, top: `${it.y}%`, animationDuration: `${(4.2 / mul).toFixed(1)}s` }}
             aria-label={it.card.word} onClick={() => tap(it)}>
             <span style={{ color: 'var(--zc)' }}>{cardArt(it.card, 54)}</span>
           </button>
@@ -127,16 +134,18 @@ export function CardFountain({ cat, speak, onDone, I, Star, Burst }) {
   const [round, setRound] = useState(0);
   const [target, setTarget] = useState(pool[0]);
   const [caught, setCaught] = useState([]);
+  const [spd, setSpd] = useState(1);
+  const mul = SPEEDS[spd].mul;
   const [end, setEnd] = useState(null);
   const [burst, setBurst] = useState(false);
   const wrongs = useRef(0);
 
-  useEffect(() => { const t = setTimeout(() => speak(`The cards are dancing around Pip! Tap the ${target.word}!`), 500); return () => clearTimeout(t); }, [round]);
+  useEffect(() => { const t = setTimeout(() => speak(`Find the ${target.word}!`), 500); return () => clearTimeout(t); }, [round]);
 
   const tap = (c) => {
     if (end || caught.includes(c.word)) return;
     if (c.word === target.word) {
-      setCaught((g) => [...g, c.word]); speak(`${c.word}! Got it!`);
+      setCaught((g) => [...g, c.word]); advSfx('yes'); speak(`${c.word}! Got it!`);
       setTimeout(() => {
         if (round + 1 >= ROUNDS) {
           const stars = wrongs.current === 0 ? 3 : wrongs.current <= 2 ? 2 : 1;
@@ -147,17 +156,18 @@ export function CardFountain({ cat, speak, onDone, I, Star, Burst }) {
           setRound(round + 1);
         }
       }, 700);
-    } else { wrongs.current += 1; speak(`That's the ${c.word}. Find the ${target.word}!`); }
+    } else { wrongs.current += 1; advSfx('no'); speak(`That's the ${c.word}. Find the ${target.word}!`); }
   };
 
   return (
     <div className="game-area" data-screen-label="Card Fountain">
-      <button className="qprompt game-ask" onClick={() => speak(`Tap the ${target.word}!`)}>
+      <button className="qprompt game-ask" onClick={() => speak(`Find the ${target.word}!`)}>
         <I n="sound" s={22} /> Tap the <b>{target.word}</b> as it dances by!
       </button>
+      <SpeedPills value={spd} onChange={setSpd} />
       <div className="fountain-scene">
         <span className="fountain-pip"><HeroMascot state="cheer" size={84} /></span>
-        <div className="fountain-ring">
+        <div className="fountain-ring" style={{ animationDuration: `${(14 / mul).toFixed(1)}s` }}>
           {pool.map((c, i) => (
             <button key={c.word} className={`fountain-card ${caught.includes(c.word) ? 'gone' : ''}`}
               style={{ '--fa': `${i * 60}deg` }} aria-label={c.word} onClick={() => tap(c)}>
@@ -183,6 +193,8 @@ export function BalloonFloat({ cat, speak, onDone, I, Star, Burst }) {
   const [round, setRound] = useState(0);
   const [balloons, setBalloons] = useState([]);
   const [target, setTarget] = useState(pool[0]);
+  const [spd, setSpd] = useState(1);
+  const mul = SPEEDS[spd].mul;
   const [end, setEnd] = useState(null);
   const [burst, setBurst] = useState(false);
   const wrongs = useRef(0);
@@ -200,12 +212,13 @@ export function BalloonFloat({ cat, speak, onDone, I, Star, Burst }) {
     })));
   };
   useEffect(() => { spawn(0); }, []);
-  useEffect(() => { const t = setTimeout(() => speak(`Pop the ${target.word} balloon!`), 600); return () => clearTimeout(t); }, [round]);
+  useEffect(() => { const t = setTimeout(() => speak(`Find the ${target.word}!`), 600); return () => clearTimeout(t); }, [round]);
 
   const tap = (b) => {
     if (b.popped || end) return;
     if (b.card.word === target.word) {
       setBalloons((bs) => bs.map((x) => x.k === b.k ? { ...x, popped: true } : x));
+      advSfx('pop');
       speak('Pop!');
       setTimeout(() => {
         if (round + 1 >= ROUNDS) {
@@ -213,18 +226,19 @@ export function BalloonFloat({ cat, speak, onDone, I, Star, Burst }) {
           setBurst(true); setEnd({ stars }); onDone('balloon', stars);
         } else { setRound(round + 1); spawn(round + 1); }
       }, 650);
-    } else { wrongs.current += 1; speak(`That's the ${b.card.word}!`); }
+    } else { wrongs.current += 1; advSfx('no'); speak(`That's the ${b.card.word}!`); }
   };
 
   return (
     <div className="game-area" data-screen-label="Balloon Float">
-      <button className="qprompt game-ask" onClick={() => speak(`Pop the ${target.word} balloon!`)}>
+      <button className="qprompt game-ask" onClick={() => speak(`Find the ${target.word}!`)}>
         <I n="sound" s={22} /> Pop the <b>{target.word}</b> balloon!
       </button>
+      <SpeedPills value={spd} onChange={setSpd} />
       <div className="bub-sky">
         {balloons.map((b) => (
           <button key={b.k} className={`balloon d${b.depth} ${b.popped ? 'popped' : ''}`}
-            style={{ left: `${b.left}%`, animationDuration: `${b.dur}s`, animationDelay: `${b.delay}s`, '--bh': b.hue }}
+            style={{ left: `${b.left}%`, animationDuration: `${(b.dur / mul).toFixed(2)}s`, animationDelay: `${b.delay}s`, '--bh': b.hue }}
             aria-label={b.card.word} onClick={() => tap(b)}>
             <span className="balloon-skin">
               <span className="balloon-art" style={{ color: '#fff' }}>{cardArt(b.card, 44)}</span>

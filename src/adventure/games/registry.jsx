@@ -57,6 +57,17 @@ export const ZONE_GAMES = {
 };
 export const ANYTIME = ['paint', 'calm'];
 
+// Pip's Playground — the top-level Play room curates ALL games into a handful of
+// kid-readable shelves (toddlers scan shelves, not a 21-tile wall). Every ADV_GAMES
+// id appears exactly once, plus `paint` (a special route handled by onPaint).
+export const PLAY_SECTIONS = [
+  { title: 'Tap & Pop', emoji: '🎉', ids: ['bubble', 'balloon', 'tunnel', 'wheel', 'pipsays'] },
+  { title: 'Find & Match', emoji: '🧩', ids: ['memory', 'shadow', 'peek', 'sort', 'boxes'] },
+  { title: 'Build & Make', emoji: '🔨', ids: ['trace', 'jigsaw', 'stack', 'cube', 'unfold', 'paint'] },
+  { title: 'Surprise!', emoji: '🎁', ids: ['egg', 'doors', 'fountain', 'train'] },
+  { title: 'Calm Corner', emoji: '🌙', ids: ['calm'] },
+];
+
 export const HUB_META = {
   train: { label: 'Counting Train', desc: 'All aboard!' },
   shadow: { label: 'Shadow Puzzle', desc: 'Who fits?' },

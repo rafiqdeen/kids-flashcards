@@ -2,8 +2,10 @@
 // Ported verbatim from adventure-activities.jsx (window globals -> imports).
 import { useState, useEffect, useRef } from 'react';
 import { Illu } from '../art/Illu.jsx';
-import { advGamePool, cardArt, shuffle } from './util.jsx';
+import { advGamePool, cardArt, shuffle, SPEEDS } from './util.jsx';
+import { SpeedPills } from './SpeedPills.jsx';
 import { StarsModal } from './StarsModal.jsx';
+import { advSfx } from '../audio.js';
 
 /* ============ 1. BUBBLE POP ============ */
 export function BubblePop({ cat, speak, onDone, I, Star, Burst }) {
@@ -12,9 +14,11 @@ export function BubblePop({ cat, speak, onDone, I, Star, Burst }) {
   const [round, setRound] = useState(0);
   const [bubbles, setBubbles] = useState([]);
   const [misses, setMisses] = useState(0);
+  const [spd, setSpd] = useState(1);     // index into SPEEDS (default Normal)
   const [end, setEnd] = useState(null);
   const [burst, setBurst] = useState(false);
   const target = cards[round % cards.length];
+  const mul = SPEEDS[spd].mul;
 
   const spawn = (r) => {
     const t = cards[r % cards.length];
@@ -25,12 +29,13 @@ export function BubblePop({ cat, speak, onDone, I, Star, Burst }) {
     })));
   };
   useEffect(() => { spawn(0); }, []);
-  useEffect(() => { const t = setTimeout(() => speak(`Pop the ${target.word}!`), 500); return () => clearTimeout(t); }, [round]);
+  useEffect(() => { const t = setTimeout(() => speak(`Find the ${target.word}!`), 500); return () => clearTimeout(t); }, [round]);
 
   const tap = (b) => {
     if (b.popped || end) return;
     if (b.card.id === target.id) {
       setBubbles((bs) => bs.map((x) => x.k === b.k ? { ...x, popped: true } : x));
+      advSfx('pop');
       speak('Pop! Yes!');
       setTimeout(() => {
         if (round + 1 >= ROUNDS) {
@@ -41,6 +46,7 @@ export function BubblePop({ cat, speak, onDone, I, Star, Burst }) {
     } else {
       setMisses((m) => m + 1);
       setBubbles((bs) => bs.map((x) => x.k === b.k ? { ...x, wob: true } : x));
+      advSfx('no');
       speak(`That's the ${b.card.word}. Find the ${target.word}!`);
       setTimeout(() => setBubbles((bs) => bs.map((x) => x.k === b.k ? { ...x, wob: false } : x)), 600);
     }
@@ -48,16 +54,17 @@ export function BubblePop({ cat, speak, onDone, I, Star, Burst }) {
 
   return (
     <div className="game-area bubblepop" data-screen-label="Bubble Pop">
-      <button className="qprompt game-ask" onClick={() => speak(`Pop the ${target.word}!`)}>
+      <button className="qprompt game-ask" onClick={() => speak(`Find the ${target.word}!`)}>
         <I n="sound" s={22} /> Pop the <b>{target.word}</b>
       </button>
+      <SpeedPills value={spd} onChange={setSpd} />
       <div className="bub-sky">
         {bubbles.map((b) => (
           <button key={b.k} className={`bub ${b.popped ? 'popped' : ''} ${b.wob ? 'wob' : ''}`}
-            style={{ left: `${b.left}%`, animationDuration: `${b.dur}s`, animationDelay: `${b.delay}s` }}
+            style={{ left: `${b.left}%`, animationDuration: `${(b.dur / mul).toFixed(2)}s`, animationDelay: `${b.delay}s` }}
             aria-label={b.card.word} onClick={() => tap(b)}>
             <span className="bub-skin" />
-            <span className="bub-art" style={{ color: 'var(--zc)' }}>{cardArt(b.card, 52)}</span>
+            <span className="bub-art" style={{ color: 'var(--zc)' }}>{cardArt(b.card, 66)}</span>
             {b.popped && <span className="bub-burst">{[...Array(6)].map((_, i) => <i key={i} style={{ '--a': `${i * 60}deg` }} />)}</span>}
           </button>
         ))}
@@ -85,6 +92,7 @@ export function MemoryMatch({ cat, speak, onDone, I, Star, Burst }) {
     if (lock.current || up.includes(t.k) || matched.includes(t.k) || end) return;
     const nu = [...up, t.k];
     setUp(nu);
+    advSfx('tap');
     speak(t.c.word);
     if (nu.length === 2) {
       lock.current = true; setMoves((m) => m + 1);
@@ -92,12 +100,12 @@ export function MemoryMatch({ cat, speak, onDone, I, Star, Burst }) {
       setTimeout(() => {
         if (a.c.id === b.c.id) {
           const nm = [...matched, a.k, b.k];
-          setMatched(nm); setUp([]); speak('A match!');
+          setMatched(nm); setUp([]); advSfx('yes'); speak('A match!');
           if (nm.length === tiles.length) {
             const stars = moves + 1 <= 9 ? 3 : moves + 1 <= 13 ? 2 : 1;
             setBurst(true); setEnd({ stars }); onDone('memory', stars);
           }
-        } else setUp([]);
+        } else { advSfx('no'); setUp([]); }
         lock.current = false;
       }, 900);
     }
@@ -160,7 +168,6 @@ export function Tracing({ cat, speak, onDone, I, Star, Burst }) {
   const [len, setLen] = useState(0);
   const [end, setEnd] = useState(null);
   const [burst, setBurst] = useState(false);
-  const dragging = useRef(false);
 
   useEffect(() => {
     const p = pathRef.current; const L = p.getTotalLength(); setLen(L);
@@ -168,7 +175,7 @@ export function Tracing({ cat, speak, onDone, I, Star, Burst }) {
     for (let i = 0; i <= N; i++) pts.push(p.getPointAtLength((i / N) * L));
     ptsRef.current = pts; setTotal(N);
     idxRef.current = 0; setIdx(0);
-    const t = setTimeout(() => speak(g === 0 ? `Trace it with your finger! ${tr.say}` : `Now this one! ${tr.say}`), 400);
+    const t = setTimeout(() => speak(g === 0 ? `Tap the glowing dot to trace it! ${tr.say}` : `Now this one! ${tr.say}`), 400);
     return () => clearTimeout(t);
   }, [g]);
 
@@ -179,9 +186,12 @@ export function Tracing({ cat, speak, onDone, I, Star, Burst }) {
   const advance = (e) => {
     const p = toSvg(e); const pts = ptsRef.current;
     let i = idxRef.current;
-    while (i < total && pts[i] && Math.hypot(pts[i].x - p.x, pts[i].y - p.y) < 11) i++;
+    // generous hit radius (17) so a single TAP on/near the glowing dot advances —
+    // ages 2-6 can't reliably drag, so tapping along the path now works too.
+    while (i < total && pts[i] && Math.hypot(pts[i].x - p.x, pts[i].y - p.y) < 17) i++;
     if (i !== idxRef.current) {
       idxRef.current = i; setIdx(i);
+      advSfx('tap');
       if (i >= total && !end) {
         if (g + 1 < set.length) {
           speak(`${tr.say} Wonderful!`);
@@ -193,9 +203,9 @@ export function Tracing({ cat, speak, onDone, I, Star, Burst }) {
       }
     }
   };
-  const down = (e) => { e.preventDefault(); dragging.current = true; advance(e); };
-  const move = (e) => { if (dragging.current) { e.preventDefault(); advance(e); } };
-  const stop = () => { dragging.current = false; };
+  // tap (or, if a child can, drag) anywhere near the glowing dot to advance the trace
+  const down = (e) => { e.preventDefault(); advance(e); };
+  const move = (e) => { if (e.buttons || e.pressure > 0) { e.preventDefault(); advance(e); } };
   const next = ptsRef.current[Math.min(idx, total)] || { x: 0, y: 0 };
 
   return (
@@ -203,7 +213,7 @@ export function Tracing({ cat, speak, onDone, I, Star, Burst }) {
       <div className="game-ask hud-pill">Trace the <b style={{ color: 'var(--zc)', margin: '0 4px' }}>{tr.label}</b>!</div>
       <div className={`trace-paper ${idx >= total ? 'donebounce' : ''}`}>
         <svg ref={svgRef} viewBox="0 0 100 100" style={{ touchAction: 'none', width: '100%', height: '100%' }}
-          onPointerDown={down} onPointerMove={move} onPointerUp={stop} onPointerLeave={stop}>
+          onPointerDown={down} onPointerMove={move}>
           <path d={tr.d} fill="none" stroke="#e3d7c5" strokeWidth="11" strokeLinecap="round" strokeLinejoin="round" />
           <path d={tr.d} fill="none" stroke="#cbbda6" strokeWidth="2.5" strokeDasharray="0.5 6" strokeLinecap="round" />
           <path ref={pathRef} d={tr.d} fill="none" stroke="var(--zc)" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round"
@@ -231,66 +241,62 @@ export function ColorSort({ speak, onDone, I, Star, Burst }) {
   ]));
   const [items, setItems] = useState(build);
   const [fed, setFed] = useState([]);
-  const [drag, setDrag] = useState(null); // {k, x, y}
+  const [sel, setSel] = useState(null); // selected swatch key — tap a colour, then tap a monster
   const [chomp, setChomp] = useState(null);
   const [shake, setShake] = useState(null);
   const [end, setEnd] = useState(null);
   const [burst, setBurst] = useState(false);
 
-  useEffect(() => { setTimeout(() => speak('Feed the hungry monsters their favorite colors!'), 500); }, []);
+  useEffect(() => { setTimeout(() => speak('Tap a colour, then tap the monster who loves it!'), 500); }, []);
 
-  const down = (e, it) => { e.preventDefault(); setDrag({ k: it.k, x: e.clientX, y: e.clientY }); };
-  const move = (e) => { if (drag) setDrag((d) => ({ ...d, x: e.clientX, y: e.clientY })); };
-  const up = (e) => {
-    if (!drag) return;
-    const el = document.elementFromPoint(e.clientX, e.clientY);
-    const m = el && el.closest('[data-monster]');
-    const it = items.find((x) => x.k === drag.k);
-    setDrag(null);
-    if (m && it) {
-      const mid = m.getAttribute('data-monster');
-      if (mid === it.col.id) {
-        const nf = [...fed, it.k];
-        setFed(nf); setChomp(mid); speak(`Yum! ${it.col.name}!`);
-        setTimeout(() => setChomp(null), 600);
-        if (nf.length === items.length) {
-          setBurst(true);
-          setTimeout(() => { setEnd({ stars: 3 }); onDone('sort', 3); }, 700);
-        }
-      } else {
-        setShake(mid); speak(`No no — I only eat ${SORT_COLORS.find((c) => c.id === mid).name.toLowerCase()}!`);
-        setTimeout(() => setShake(null), 500);
+  // tap a swatch to pick it up (tap again to put it down)
+  const pick = (it) => { if (sel === it.k) { setSel(null); return; } setSel(it.k); advSfx('tap'); speak(it.col.name); };
+  // tap a monster to feed it the picked colour
+  const feed = (mid) => {
+    if (!sel) return;
+    const it = items.find((x) => x.k === sel); if (!it) return;
+    if (mid === it.col.id) {
+      const nf = [...fed, it.k];
+      setFed(nf); setChomp(mid); setSel(null); advSfx('yes'); speak(`Yum! ${it.col.name}!`);
+      setTimeout(() => setChomp(null), 600);
+      if (nf.length === items.length) {
+        setBurst(true);
+        setTimeout(() => { setEnd({ stars: 3 }); onDone('sort', 3); }, 700);
       }
+    } else { // wrong monster — keep the colour selected so they can try the right one
+      setShake(mid); advSfx('no'); speak(`No no — I only eat ${SORT_COLORS.find((c) => c.id === mid).name.toLowerCase()}!`);
+      setTimeout(() => setShake(null), 500);
     }
   };
 
   return (
-    <div className="game-area gctr" data-screen-label="Color Sort" onPointerMove={move} onPointerUp={up}>
-      <div className="game-ask hud-pill">Feed the monsters!</div>
+    <div className="game-area gctr" data-screen-label="Color Sort">
+      <div className="game-ask hud-pill">{sel ? 'Now tap the right monster!' : 'Tap a colour to feed!'}</div>
       <div className="monster-row">
-        {SORT_COLORS.map((c) => (
-          <div key={c.id} className={`monster ${chomp === c.id ? 'chomp' : ''} ${shake === c.id ? 'shakex' : ''}`}
-            data-monster={c.id} style={{ '--mc': c.hex }} aria-label={`${c.name} monster`}>
-            <span className="m-eye l" /><span className="m-eye r" />
-            <span className="m-mouth" />
-          </div>
-        ))}
+        {SORT_COLORS.map((c) => {
+          const full = items.filter((x) => x.col.id === c.id).every((x) => fed.includes(x.k)); // colour all eaten
+          return (
+            <div key={c.id} className={`monster ${chomp === c.id ? 'chomp' : ''} ${shake === c.id ? 'shakex' : ''} ${sel && !full ? 'targetable' : ''}`}
+              data-monster={c.id} style={{ '--mc': c.hex }} role={full ? undefined : 'button'} tabIndex={full ? -1 : 0}
+              aria-label={full ? `${c.name} monster — full` : `Feed the ${c.name} monster`}
+              onClick={() => { if (!full) feed(c.id); }} onKeyDown={(e) => { if (!full && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); feed(c.id); } }}>
+              <span className="m-eye l" /><span className="m-eye r" />
+              <span className="m-mouth" />
+            </div>
+          );
+        })}
       </div>
       <div className="sort-tray">
         {items.map((it) => fed.includes(it.k) ? null : (
-          <button key={it.k} className="sort-item" style={{ color: it.col.hex, visibility: drag && drag.k === it.k ? 'hidden' : 'visible' }}
-            aria-label={it.col.name} onPointerDown={(e) => down(e, it)}>
+          <button key={it.k} className={`sort-item ${sel === it.k ? 'sel' : ''}`} style={{ color: it.col.hex }}
+            aria-label={it.col.name} aria-pressed={sel === it.k} onClick={() => pick(it)}>
             <Illu name="swatch" hex={it.col.hex} size={52} />
           </button>
         ))}
       </div>
-      {drag && (() => { const it = items.find((x) => x.k === drag.k); return (
-        <span className="drag-ghost" style={{ left: drag.x, top: drag.y }}>
-          <Illu name="swatch" hex={it.col.hex} size={56} />
-        </span>); })()}
       {burst && <Burst onDone={() => setBurst(false)} />}
       {end && <StarsModal stars={3} title="All fed!" sub="The monsters are full and happy!" I={I} Star={Star}
-        onAgain={() => { setItems(build()); setFed([]); setEnd(null); }} onBack={() => onDone('__back')} />}
+        onAgain={() => { setItems(build()); setFed([]); setEnd(null); setSel(null); }} onBack={() => onDone('__back')} />}
     </div>
   );
 }

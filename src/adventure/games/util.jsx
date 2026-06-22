@@ -6,6 +6,16 @@ import { CARDS } from '../data/cards.js';
 
 export const shuffle = (a) => [...a].sort(() => Math.random() - .5);
 
+// Shared speed presets for games with moving/auto-timed targets (Bubble Pop,
+// Balloon Float, Tunnel Runner, Peek-a-Boo, Pip Says, Mystery Boxes, Card Fountain).
+// Apply as `duration / SPEEDS[i].mul` (higher mul = faster); kids who need more time
+// pick 🐢. Rendered via the SpeedPills component (games/SpeedPills.jsx).
+export const SPEEDS = [
+  { key: 'slow', label: 'Slow', emoji: '🐢', mul: 0.6 },
+  { key: 'norm', label: 'Normal', emoji: '🐰', mul: 1 },
+  { key: 'fast', label: 'Fast', emoji: '⚡', mul: 1.7 },
+];
+
 export const pickCards = (catId, n) => (CARDS[catId] || CARDS.animals).slice(0, n);
 
 // build a pool of n unique cards, topping up from other categories when the

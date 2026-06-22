@@ -52,10 +52,11 @@ async function openSettings(page) {
 
 const settingsTab = (tab) => async (page) => { await openSettings(page); await page.click(`[data-testid="settings-tab-${tab}"]`); await page.waitForTimeout(250); };
 
-// open a specific game from a zone's hub (no gate needed — synchronous nav)
+// open a specific game from the top-level Playground (every game lives there now;
+// `cat` is retained only to label the capture). No gate needed — synchronous nav.
 const openGame = (cat, id, label) => async (page) => {
   await seedAll(page);
-  await page.click(`[data-testid="node-${cat}-activity"]`);
+  await page.click('[data-testid="open-play"]');
   await page.waitForSelector('[data-testid="activity-hub"]');
   await page.click(`[data-testid="activity-${id}"]`);
   await waitLabel(page, label);
@@ -143,14 +144,14 @@ export const SCREENS = [
 
   // ---- activity hub ----
   {
-    name: 'activity-hub', label: 'Activities: Animals',
-    prep: async (page) => { await seed(page, { progress: { animals: { learnStars: 3 } } }); await page.click('[data-testid="node-animals-activity"]'); await page.waitForSelector('[data-testid="activity-hub"]'); await page.waitForTimeout(400); },
+    name: 'activity-hub', label: 'Playground',
+    prep: async (page) => { await seed(page); await page.click('[data-testid="open-play"]'); await page.waitForSelector('[data-testid="activity-hub"]'); await page.waitForTimeout(500); },
   },
 
   // ---- Paint Studio ----
   {
     name: 'paint', label: 'Paint studio',
-    prep: async (page) => { await seed(page, { progress: { animals: { learnStars: 3 } } }); await page.click('[data-testid="node-animals-activity"]'); await page.waitForSelector('[data-testid="activity-paint"]'); await page.click('[data-testid="activity-paint"]'); await page.waitForSelector('[data-screen-label="Paint studio"]'); await page.waitForTimeout(400); },
+    prep: async (page) => { await seed(page); await page.click('[data-testid="open-play"]'); await page.waitForSelector('[data-testid="activity-paint"]'); await page.click('[data-testid="activity-paint"]'); await page.waitForSelector('[data-screen-label="Paint studio"]'); await page.waitForTimeout(400); },
   },
 
   // ---- Story Land ----

@@ -510,6 +510,222 @@ add a 2nd profile → switch profiles (header name updates).
     console-clean (125/125); `diff.mjs` 0/90 (story panels already in
     `DEVIATIONS`); lint + build clean.
 
+- **Play promoted to a top-level destination + persistent nav dock** — "Play" was
+  a 4th per-zone node on the world map (Learn→Quiz→**Play**→Treasure), gated behind
+  finishing Learn and themed per zone. It's now its own top-level room, a sibling of
+  Story Land, surfaced through a **persistent bottom dock** (Adventure · Play ·
+  Stories) rendered over every in-app screen — matching a user-provided mockup.
+  - **Dock** (`components/Dock.jsx`, mounted once in `App.jsx`): three equal tabs
+    (`map`/`games`/`book` icons) with the current destination highlighted
+    (`aria-current="page"`, blue fill). `App` derives the active tab from the route
+    (`story`→Stories; `activity` or paint-from-play→Play; else Adventure) and each
+    tab navigates to that destination's home. A floating cream pill, `z-index:45`
+    (below the top HUD at 50 and modals at 60). Every screen reserves
+    `--dock-h` (`tokens.css`) of bottom space (`.world`, `.level`, `.story-level`
+    `padding-bottom`) so footers/controls never hide behind it (verified: world,
+    Playground, Paint phone dock, comic bar, game footers, quiz all clear it).
+  - **World map** (`screens/World.jsx`): the Play node is gone — the trail is now
+    **3 nodes** (Learn→Quiz→Treasure) with a recomputed rope/positions
+    (`TRAIL_H=380`). The Stories/Play corner FABs were removed from the top HUD, so
+    it's back to one tidy row (brand · profile · star/mute/settings; brand trims to
+    "Pip!" on phones via `.hb-x`). `actState`/`actDone` and the per-zone `z.act`
+    star-tracking are removed; the journey already advanced Quiz→Treasure, so the
+    unlock chain is unchanged.
+  - **Pip's Playground** (`screens/ActivityHub.jsx`, the repurposed hub): an ungated
+    library of every game curated into kid-readable shelves (`PLAY_SECTIONS` in
+    `games/registry.jsx` — Tap & Pop / Find & Match / Build & Make / Surprise! /
+    Calm Corner) with a carnival bunting banner, cheering Pip, and toy-box tiles
+    (staggered entrance + subtle per-tile tilt). Default deck = animals (as the old
+    Settings quick-play already used); game stars now record to a global `__play`
+    bucket instead of polluting a zone. Built with `/frontend-design`.
+  - **Tests**: dock tabs carry the old `open-play`/`open-story` test-ids (+ new
+    `open-adventure`), so existing nav in functional/e2e/screens kept working;
+    `functional.mjs` gained a dock section (3 tabs · active-state tracks route ·
+    persists inside a game · **re-tapping the active tab returns to the room root**)
+    — now **85/85**. The paint `stroke`/`tap` helpers re-read the live canvas box
+    each call (robust to the canvas re-fitting under the new bottom padding). The
+    global dock changes every screen vs the dock-less prototype, so `activity-hub`,
+    `chest`, `story-shelf` joined `diff.mjs` `DEVIATIONS` (most hub/level screens
+    were already flagged). zones 125/125, e2e 17/17, diff 0/90, lint+build clean.
+  - **Adversarial-review hardening** (3 lenses): (1) re-tapping the *already-active*
+    Play/Stories tab was a dead tap (route name unchanged → no remount) — fixed with
+    a `navNonce` remount key so it pops the room back to its root and clears any
+    stale quick-play `autoGame`; (2) the comic double-reserved `--dock-h` (it's
+    `.story-level` nested in `.level`), crushing the page — now only `.level`
+    reserves it; (3) full-bleed risers (Bubble Pop / Balloon Float share `.bub-sky`)
+    traveled through / could be tap-stolen by the dock band — `.bub-sky` now
+    `overflow:hidden`; (4) the dock gets `inert` + `aria-hidden` while a modal/scrim
+    is open so AT/keyboard users can't reach it behind the scrim; (5) dock label
+    contrast raised (inactive `#565c6b`, darker active blue + text-shadow); (6)
+    Settings quick-play Paint now highlights Play (paint always belongs to Play).
+
+- **Drag-free games — every Play game is now tap-only (ages 2-6 can't drag)** — a
+  full audit of all 20 games (workflow) found exactly 5 using pointer drag/swipe; all
+  converted to tap, the other 15 verified already tap-only and untouched.
+  - **Tap-source → tap-target** for the 3 placement games — **ColorSort** (feed the
+    monsters), **ShadowPuzzle**, **JigsawPuzzle**: replaced the `{drag}` state +
+    `onPointerDown/Move/Up` + `.drag-ghost` + `elementFromPoint` hit-testing with a
+    `{sel}` selection. Tap a source → it lifts (`.sel`, gold ring) and the valid
+    targets gain a static gold ring (`.targetable`); tap a **correct** target →
+    auto-places via the original success path; tap a **wrong** one → the original
+    gentle feedback and the selection is **kept** so the child just tries another.
+    Targets became `role="button"` + `tabIndex` + Enter/Space handlers. Win
+    detection, star scoring (incl. Jigsaw's `wrongs` counter), and narration are
+    unchanged — only the input changed. (Jigsaw guards on `sel === null`, not `!sel`,
+    so piece index 0 works.)
+  - **Tap-to-spin** — **PrizeWheel**: the velocity swipe/fling became a `<button>`
+    `.wheel-scene` `onClick={spin}` that picks a random slot and rotates several whole
+    turns to it; `landed` stays a multiple of `STEP` (=60; 360=6·STEP) so the
+    front-facing card is exact, and it always spins forward from the current angle.
+    Disabled while spinning. Same match/score/narration.
+  - **Tap-to-trace** — **Tracing**: dropped the `dragging` ref; a tap (`onPointerDown
+    → advance`) now advances, the hit radius widened 11→17 so taps on the glowing dot
+    register, and `onPointerMove` still traces for kids who *can* drag (guarded on
+    `e.buttons`/`pressure`).
+  - Round/picture transitions clear `sel`; `.targetable` is a **static** ring (no
+    infinite pulse → tappable + reduced-motion-safe); grab cursors → pointer.
+  - **Tests**: `functional.mjs` gained 6 guards that **complete each game by tap
+    alone** (ColorSort/Shadow/Jigsaw brute-forced to their win modal, PrizeWheel spins,
+    Tracing fully advances) + a wrong-target check — now **91/91**. zones 125/125, e2e
+    17/17, diff 0/90 (these games already in `DEVIATIONS`), lint+build clean.
+
+- **Caption moved to a bottom subtitle (was overlapping game prompts)** — the global
+  spoken-line caption (`.cap2`) was fixed at `top:76px`, which collided with the
+  top-of-screen game/quiz prompt pills (`.game-ask`/`.qprompt`) that show the *same*
+  text. Repositioned to a bottom subtitle, `bottom: calc(var(--dock-h) + 12px)` (just
+  above the nav dock), and `<Caption suppress={route.name==='story'}>` so it doesn't
+  double up with the comic's own panel captions/bubbles.
+- **Every Play game now has WebAudio sound effects (`advSfx`)** — games previously made
+  sound ONLY via `speak()` (live Web Speech for their dynamic prompts), which some
+  browsers (e.g. Brave) silence — so games felt mute even though stories (pre-baked
+  clips) played. Audited all 20 games and wired `advSfx` at each meaningful event,
+  independent of the speech engine: correct → `yes`, wrong → `no`, bubble/balloon/peek
+  pop → `pop`, neutral tap/select/turn/spin/flip/crack/drop → `tap` (completion still
+  fires `win` once, via the hub's `gameDone`). Coverage (all 20): BubblePop pop/no ·
+  MemoryMatch tap/yes/no · Tracing tap · ColorSort tap/yes/no · CountingTrain tap/yes ·
+  ShadowPuzzle tap/yes/no · PipSays yes/no · CalmCorner tap · PeekABoo pop/no ·
+  MagicCube tap/yes/no · JigsawPuzzle tap/yes/no · EggSurprise tap/yes · MysteryBoxes
+  yes/no · PrizeWheel tap/yes/no · MagicDoors yes/no · UnfoldCube tap/yes/no ·
+  BlockStacker tap · TunnelRunner yes/no · CardFountain yes/no · BalloonFloat pop/no.
+  **Verified** every game emits sound by spying on `AudioContext.createOscillator`
+  (each `advSfx` tone) and confirming a non-zero oscillator count per game on
+  interaction (animated/phased games — fountain/calm/boxes/stack — checked with
+  force/timed clicks). functional 91/91, zones 125/125, e2e 17/17, diff 0/90, lint+build clean.
+- **Games now SPEAK reliably in every browser (was silent in Brave)** — game prompts
+  used live Web Speech for their dynamic per-word text, which Brave silences (stories
+  play because they use pre-baked clips). Pre-baking every game prompt × 261 words ≈
+  6000 clips / ~20MB, so instead (user-approved "reuse baked"): the **9 per-word
+  "find the target" games** (Bubble, Peek, Cube, Wheel, Boxes, Doors, Tunnel, Fountain,
+  Balloon) now SPEAK the already-baked `Find the {word}!` clip for their target — the
+  on-screen prompt pill keeps its flavor ("Pop the {word}!"), only the spoken/caption
+  line changes. The generator (`scripts/gen-narration.mjs`) also bakes the fixed
+  (wordless) game phrases (Pop! Yes! / A match! / Perfect fit! / Empty! Try another
+  box! / …), the 3 Feed-the-Monsters colours, the finite Tracing glyph lines, and the
+  21 game-open labels (596 → 675 clips, ~+1MB). Per-word *feedback* lines ("That's the
+  {word}…", "Yes! {word}!") stay on live speech (covered by the new `advSfx` yes/no
+  cues in Brave). **Verified** by spying on the speech API: Bubble Pop's prompt now
+  resolves to a `<audio>` clip (`/narration/…` for "Find the Cat!") instead of a live
+  (silent) utterance.
+
+- **Picture Pieces rebuilt as a real interlocking jigsaw** (`games/set3.jsx`
+  `JigsawPuzzle`, built with `/frontend-design`) — replaced the 3 flat strips with
+  genuine puzzle pieces: complementary **semicircular tab/blank knobs** generated by
+  `jigEdge`/`jigPath` (each interior edge gets a random tab on one neighbour, blank on
+  the other; `buildPuzzle` makes them complementary) and rendered as **CSS
+  `clip-path: path()`** over the full card art (`cardArt(card, JIG_BOARD)` translated to
+  the piece's region) with an overlay **SVG white-stroke edge** for depth — works for
+  any art (SVG/emoji/text), unlike SVG-nested clipping. Adds a **true 2-D grid** with an
+  Easy 4 / Medium 9 / Hard 16 **piece-count selector**, a faint **picture-guide ghost**
+  behind the board + a **Peek** button, a **scatter tray**, **snap-on-correct** (pop) +
+  gentle **red flash + voice** on a wrong spot, a **progress bar**, and stars by
+  mistakes ("Play again" rotates the picture). Interaction stays **tap-a-piece →
+  tap-its-spot** (the app is tap-only for ages 2-6 — no drag), so the existing
+  `.jig-piece`/`.jig-slot`/`.filled` test hooks and the drag-free completion test still
+  pass. Verified: real pieces visibly interlock with white edges on desktop AND 390px
+  phone; functional 92/92, zones 125/125, e2e 17/17, diff 0/90 (game-jigsaw already a
+  `DEVIATION`), lint+build clean.
+  - **Puzzle-table layout (responsive) + crash fix** (review-driven): on Hard (16) the
+    stacked board+tray overlapped, so the board now lives in a **two-column `.jig-stage`**
+    — a bigger assembly board (380px) on the LEFT and the piece tray panel on the RIGHT
+    on wide screens (≥760px), stacked with a bounded scrollable tray on phones; board
+    size is responsive (380 wide / 300 narrow) via a `matchMedia` in the parent. The
+    adversarial review also caught a **crash** switching to a smaller grid (stale tray
+    indices → `pieces[idx]` undefined); fixed by splitting into a parent (lvl/pic) + a
+    `key={lvl-pic}` `JigBoard` that **remounts fresh** so state can't lag the grid, plus
+    a guard and a new functional regression test ("Jigsaw difficulty switch does not crash").
+
+- **Bubble bigger + a shared speed control across motion games** — bumped Bubble Pop's
+  bubbles (96→120px) and the emoji inside (52→66). Then a per-game workflow audit of all
+  20 games found exactly the ones with **moving / auto-timed, time-pressured targets**;
+  those got a 🐢/🐰/⚡ speed control, the 13 self-paced tap games correctly got none
+  (would be clutter). Shared `SPEEDS` (`games/util.jsx`) + `SpeedPills` component
+  (`games/SpeedPills.jsx`, its own file so react-refresh stays happy); the game applies
+  `duration / SPEEDS[i].mul` uniformly (🐢 0.6 = slower, ⚡ 1.7 = faster). Wired into:
+  **Bubble Pop** & **Balloon Float** (rise duration), **Card Fountain** (orbit), **Tunnel
+  Runner** (spawn interval + dwell + item-zoom; `spd` added to the spawner effect deps),
+  **Peek-a-Boo** (pop interval + linger; closure-safe via a `mulRef`), **Mystery Boxes**
+  (shuffle delays + box-glide transition), **Pip Says** (watch-phase playback pacing).
+  Timer-driven games read the latest speed via a `mulRef` so changing speed mid-game
+  works without restarting. Verified by spying on each game's live timing: Slow measurably
+  slows every one (e.g. fountain orbit 14→23s, tunnel zoom 4.2→7s, boxes glide 0.55→0.92s),
+  console clean. functional 92/92, zones 125/125, e2e 17/17, diff 0/90, lint+build clean.
+
+- **Prize Wheel rebuilt as a flat spin-wheel** (`games/set4.jsx` PrizeWheel) — the 3D
+  `rotateY` carousel showed only 3 of 6 cards (the target hid on a back face) and read
+  as three flat cards, not something spinnable ("how do I spin?"). Replaced the render
+  (kept the `spin()` landing math — 2D `rotate` lands a slot at the top identically)
+  with a **flat circular wheel**: 6 colour wedges (`conic-gradient(from -30deg …)` with
+  `WHEEL_COLORS`), every card visible, a fixed gold **pointer** at the top, and a clear
+  central **"Spin!" hub**. Cards are placed radially (`rotate(i*60) translateY(-104)`)
+  but **counter-rotated** (`rotate(-(rot+i*60))`, transitioned in sync with the wheel)
+  so they ride the spinning wheel staying **upright/readable**. CSS `.wheel-*` → `.pw-*`.
+  The functional spin test now reads `.pw-wheel`. Verified on desktop + 390px phone (all
+  6 labels readable, target wedge visible); functional 92/92, zones 125/125, e2e 17/17,
+  diff 0/90 (game-wheel already a `DEVIATION`), lint+build clean.
+
+- **Magic Cube — premium 3D restyle** (`games/set3.jsx` MagicCube) — it read as a flat
+  white card with a broken-looking grey top. Kept the 4-face/90°-turn mechanic but made
+  it visibly a solid 3D cube: responsive size (280 wide / 230 narrow) with `translateZ`
+  = half the cube; a deeper `rotateX(-18deg)` tilt so the **top lid** shows; shaded faces
+  (light→cool gradient + inset highlight/shadow); a proper lid (`.cap.top` radial
+  gradient + a faint ✨) and dark bottom; a **gentle float** (`cubeFloat`) with a synced
+  **ground shadow** (`cubeShadow`) so it reads as a floating solid; smoother `.7s` turn.
+  Both idle animations are symmetric (rest at 0/100%) so the reduced-motion / motion-off
+  freeze lands clean. functional 92/92, zones 125/125, e2e 17/17, diff 0/90 (game-cube
+  already a `DEVIATION`), lint+build clean.
+
+- **Magic Cube — lid now fits flush** (`games/set3.jsx` + `.cube-face*` CSS) — the top lid
+  read as a *detached, skewed* tile floating above the cube. The 3D transforms were already
+  correct (top shares an edge with the front face); the gap was pure CSS: per-face
+  `border-radius:22px` clipped the shared edge inward, a per-face `0 0 0 2px` ring outlined
+  each face as its own tile, and a harsh off-centre radial gradient on the lid read as a
+  skewed surface. Fixed: radius `22→10`, faces overlap `inset:-1px` to kill the AA seam,
+  dropped the outer ring, flat evenly-lit lid gradient, gentler view (tilt `-18→-13`,
+  perspective `900→1100`, origin `40%→46%`). Verified with a screenshot probe (resting +
+  mid-spin both read as one solid cube). lint+build clean.
+
+- **Mystery Boxes — premium treasure chest + top overlap fix** (`games/set4.jsx`
+  MysteryBoxes + `.mbox*` CSS). Two issues: (1) the 🐢/🐰/⚡ speed control overlapped the
+  pinned prompt pill — the prompt is `position:absolute; top:10; height:48` (bottom 58) but
+  the speed control (first in-flow child) started at `padding-top:56`. Fixed with
+  `.game-area.gctr > .speed-ctl { margin-top:26px }` (clears the pill; only affects games
+  that *have* a speed control). (2) The flat brown box→ a **premium wooden treasure chest**:
+  warm wood-plank base, twin **riveted brass bands**, a **domed hinged lid** with an
+  overhanging lip, a **gold keyhole clasp** that **glows on open** ("unlocked!"), a deep
+  hollow interior (`.mbox-base::before` fades in), and a `chestPop` friend reveal. Design
+  chosen via a 4-way **judge-panel workflow** (pirate / gift / jewel / storybook scored by
+  premium-feel / kid-fit / CSS-correctness): the adversarial CSS judge confirmed-by-render
+  that the two prettiest (jewel, gift) had **broken open animations** (lid flung up into a
+  detached floating bar), so we shipped the **Captain's Chest** base (correct hinge +
+  hollow reveal + on-brand brass/wood) and grafted the chunky lid rim, the glow-on-open
+  clasp, the `chestPop` reveal, and a `prefers-reduced-motion` block. The lid opens via a
+  CHILD (`.mbox-lid` rotateX), never `.mbox` (which owns the inline translateX shuffle), so
+  they never fight. The clasp is anchored to the **base** (lock plate stays on the body) to
+  avoid the panel-flagged "clasp detaches on open". Friend is conditionally rendered
+  (open && hider) so it can never spoil. functional 96/96 (3 new MysteryBoxes tests: chest
+  renders, no spoiler while closed, completable by tap), zones 125/125, e2e 17/17, diff
+  0/90 (game-boxes already a `DEVIATION`), lint+build clean.
+
 ## Faithfully-reproduced prototype quirks (not bugs we introduced)
 
 - **World HUD overflows at 390px.** The fixed `.world-hud` has no wrap/shrink, so

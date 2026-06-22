@@ -1,8 +1,10 @@
 // set4.jsx — 3D games: Mystery Boxes, Prize Wheel, Magic Doors, Unfold the Cube.
 // Ported verbatim from adventure-activities4.jsx (window globals -> imports).
 import { useState, useEffect, useRef } from 'react';
-import { advGamePool, cardArt, shuffle } from './util.jsx';
+import { advGamePool, cardArt, shuffle, SPEEDS } from './util.jsx';
+import { SpeedPills } from './SpeedPills.jsx';
 import { StarsModal as AdvStarsModal } from './StarsModal.jsx';
+import { advSfx } from '../audio.js';
 
 /* ============ 13. MYSTERY BOXES (3D shell game) ============ */
 export function MysteryBoxes({ cat, speak, onDone, I, Star, Burst }) {
@@ -14,17 +16,20 @@ export function MysteryBoxes({ cat, speak, onDone, I, Star, Burst }) {
   const [slots, setSlots] = useState([0, 1, 2]);   // box i renders at slot[i]
   const [phase, setPhase] = useState('show');      // show|shuffle|guess|reveal
   const [open, setOpen] = useState([true, true, true]);
+  const [spd, setSpd] = useState(1);     // index into SPEEDS (default Normal)
   const [end, setEnd] = useState(null);
   const [burst, setBurst] = useState(false);
   const wrongs = useRef(0);
   const timers = useRef([]);
+  const mul = SPEEDS[spd].mul;
+  const mulRef = useRef(mul); mulRef.current = mul;
 
   const startRound = (r) => {
     const f = pool[r % pool.length]; const h = Math.floor(Math.random() * 3);
     setFriend(f); setHider(h); setSlots([0, 1, 2]); setPhase('show');
     setOpen([true, true, true]);
-    timers.current.push(setTimeout(() => speak(`Watch! The ${f.word} hides in a box!`), 400));
-    timers.current.push(setTimeout(() => { setOpen([false, false, false]); setPhase('shuffle'); }, 1900));
+    timers.current.push(setTimeout(() => speak(`Find the ${f.word}!`), 400));
+    timers.current.push(setTimeout(() => { setOpen([false, false, false]); setPhase('shuffle'); }, 1900 / mulRef.current));
     // 3 swaps
     [0, 1, 2].forEach((i) => timers.current.push(setTimeout(() => {
       setSlots((s) => {
@@ -33,8 +38,8 @@ export function MysteryBoxes({ cat, speak, onDone, I, Star, Burst }) {
         [ns[a], ns[b]] = [ns[b], ns[a]];
         return ns;
       });
-    }, 2400 + i * 650)));
-    timers.current.push(setTimeout(() => { setPhase('guess'); speak(`Where is the ${f.word}?`); }, 4500));
+    }, (2400 + i * 650) / mulRef.current)));
+    timers.current.push(setTimeout(() => { setPhase('guess'); speak(`Find the ${f.word}!`); }, 4500 / mulRef.current));
   };
   useEffect(() => { startRound(0); return () => timers.current.forEach(clearTimeout); }, []);
 
@@ -42,6 +47,7 @@ export function MysteryBoxes({ cat, speak, onDone, I, Star, Burst }) {
     if (phase !== 'guess' || end) return;
     setOpen((o) => o.map((x, j) => j === i ? true : x));
     if (i === hider) {
+      advSfx('yes');
       setPhase('reveal'); speak(`There you are, ${friend.word}!`);
       setTimeout(() => {
         if (round + 1 >= ROUNDS) {
@@ -50,6 +56,7 @@ export function MysteryBoxes({ cat, speak, onDone, I, Star, Burst }) {
         } else { setRound(round + 1); startRound(round + 1); }
       }, 1300);
     } else {
+      advSfx('no');
       wrongs.current += 1; speak('Empty! Try another box!');
       setTimeout(() => setOpen((o) => o.map((x, j) => j === i ? false : x)), 900);
     }
@@ -58,13 +65,25 @@ export function MysteryBoxes({ cat, speak, onDone, I, Star, Burst }) {
   return (
     <div className="game-area gctr" data-screen-label="Mystery Boxes">
       <div className="game-ask hud-pill">{phase === 'guess' ? `Where is the ${friend.word}?` : phase === 'shuffle' ? 'Watch them dance!' : 'Watch closely…'}</div>
+      <SpeedPills value={spd} onChange={setSpd} />
       <div className="boxes-stage">
         {[0, 1, 2].map((i) => (
           <button key={i} className={`mbox ${open[i] ? 'open' : ''}`}
-            style={{ transform: `translateX(${(slots[i] - 1) * 130}px)` }}
+            style={{ transform: `translateX(${(slots[i] - 1) * 130}px)`, transition: `transform ${(0.55 / mul).toFixed(2)}s` }}
             aria-label={`Box ${i + 1}`} disabled={phase !== 'guess'} onClick={() => pick(i)}>
-            <span className="mbox-lid" />
-            <span className="mbox-body" />
+            <span className="mbox-shadow" aria-hidden="true" />
+            <span className="mbox-base" aria-hidden="true">
+              <span className="mbox-band band-l" />
+              <span className="mbox-band band-r" />
+              <span className="mbox-clasp"><span className="mbox-keyhole" /></span>
+            </span>
+            <span className="mbox-lid" aria-hidden="true">
+              <span className="mbox-lid-face">
+                <span className="mbox-band lid-band-l" />
+                <span className="mbox-band lid-band-r" />
+              </span>
+              <span className="mbox-lid-rim" />
+            </span>
             {open[i] && i === hider && (
               <span className="mbox-friend" style={{ color: 'var(--zc)' }}>{cardArt(friend, 56)}</span>
             )}
@@ -79,7 +98,8 @@ export function MysteryBoxes({ cat, speak, onDone, I, Star, Burst }) {
   );
 }
 
-/* ============ 14. PRIZE WHEEL (3D carousel with swipe) ============ */
+/* ============ 14. PRIZE WHEEL (flat spin wheel — all 6 cards visible) ============ */
+const WHEEL_COLORS = ['#ff8fab', '#ffc857', '#8ce99a', '#6ec8ff', '#c8a2ff', '#ffa46e'];
 export function PrizeWheel({ cat, speak, onDone, I, Star, Burst }) {
   const pool = advGamePool(cat.id, 6, true);
   const ROUNDS = 4;
@@ -90,29 +110,39 @@ export function PrizeWheel({ cat, speak, onDone, I, Star, Burst }) {
   const [target, setTarget] = useState(() => pool[Math.floor(Math.random() * 6)]);
   const [end, setEnd] = useState(null);
   const [burst, setBurst] = useState(false);
+  const [wide, setWide] = useState(() => typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(min-width: 760px)').matches);
   const wrongs = useRef(0);
-  const drag = useRef(null);
+  // bigger wheel on wide screens; everything (card radius, chip, icon, hub) scales from it
+  const size = wide ? 430 : 330;
+  const radius = Math.round(size * 0.335), chip = Math.round(size * 0.27), artSize = Math.round(size * 0.155), hub = Math.round(size * 0.27);
 
-  useEffect(() => { const t = setTimeout(() => speak(`Spin the wheel! Stop on the ${target.word}!`), 500); return () => clearTimeout(t); }, [round]);
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return;
+    const m = window.matchMedia('(min-width: 760px)');
+    const h = () => setWide(m.matches);
+    m.addEventListener('change', h);
+    return () => m.removeEventListener('change', h);
+  }, []);
+  useEffect(() => { const t = setTimeout(() => speak(`Find the ${target.word}!`), 500); return () => clearTimeout(t); }, [round]);
 
   const frontIdx = ((Math.round(-rot / STEP) % 6) + 6) % 6;
-  const down = (e) => { if (end) return; e.preventDefault(); drag.current = { x: e.clientX, r: rot, t: performance.now(), v: 0 }; setSpinning(false); };
-  const move = (e) => {
-    const d = drag.current; if (!d) return;
-    const nr = d.r + (e.clientX - d.x) * 0.45;
-    d.v = (e.clientX - d.x) / Math.max(1, performance.now() - d.t);
-    setRot(nr);
-  };
-  const up = () => {
-    const d = drag.current; if (!d) return; drag.current = null;
-    const fling = Math.max(-3, Math.min(3, d.v)) * 360;
-    const landed = Math.round((rot + fling) / STEP) * STEP;
+  // Tap to spin: pick a random landing slot, then rotate several whole turns past
+  // the current position to it. `landed` stays a multiple of STEP (360 = 6·STEP),
+  // so the front-facing card is exactly `landSlot` — no off-by-one.
+  const spin = () => {
+    if (end || spinning) return;
+    const turns = 2 + Math.floor(Math.random() * 3);     // 2–4 full revolutions
+    const landSlot = Math.floor(Math.random() * 6);
+    let landed = -(landSlot * STEP);
+    while (landed > rot - turns * 360) landed -= 360;     // always spin forward a few turns
+    advSfx('tap');
     setSpinning(true); setRot(landed);
     setTimeout(() => {
       setSpinning(false);
       const fi = ((Math.round(-landed / STEP) % 6) + 6) % 6;
       const f = pool[fi];
       if (f.word === target.word) {
+        advSfx('yes');
         speak(`Yes! You landed on the ${f.word}!`);
         setTimeout(() => {
           if (round + 1 >= ROUNDS) {
@@ -120,28 +150,31 @@ export function PrizeWheel({ cat, speak, onDone, I, Star, Burst }) {
             setBurst(true); setEnd({ stars }); onDone('wheel', stars);
           } else { setRound(round + 1); setTarget(pool[Math.floor(Math.random() * 6)]); }
         }, 900);
-      } else { wrongs.current += 1; speak(`That's the ${f.word}. Spin again! Find the ${target.word}!`); }
+      } else { advSfx('no'); wrongs.current += 1; speak(`That's the ${f.word}. Tap to spin again! Find the ${target.word}!`); }
     }, 1300);
   };
 
+  const wheelBg = `conic-gradient(from -30deg, ${WHEEL_COLORS.map((c, i) => `${c} ${i * STEP}deg ${(i + 1) * STEP}deg`).join(', ')})`;
   return (
-    <div className="game-area gctr" data-screen-label="Prize Wheel" onPointerMove={move} onPointerUp={up} onPointerLeave={up}>
-      <button className="qprompt game-ask" onClick={() => speak(`Stop on the ${target.word}!`)}>
+    <div className="game-area gctr" data-screen-label="Prize Wheel">
+      <button className="qprompt game-ask" onClick={() => speak(`Find the ${target.word}!`)}>
         <I n="sound" s={22} /> Spin to the <b>{target.word}</b>!
       </button>
-      <div className="wheel-scene" onPointerDown={down} style={{ touchAction: 'none' }}>
-        <span className="wheel-pin" aria-hidden="true" />
-        <div className={`wheel-ring ${spinning ? 'easing' : ''}`} style={{ transform: `rotateY(${rot}deg)` }}
-          role="img" aria-label={`Wheel showing ${pool[frontIdx].word} in front`}>
+      <button className="pw-scene" data-testid="wheel-spin" onClick={spin} disabled={spinning || !!end}
+        aria-label={spinning ? 'Spinning…' : `Tap to spin the wheel. It shows ${pool[frontIdx].word}.`}
+        style={{ width: size, height: size, touchAction: 'manipulation' }}>
+        <span className="pw-pointer" aria-hidden="true" />
+        <div className={`pw-wheel ${spinning ? 'spinning' : ''}`} style={{ transform: `rotate(${rot}deg)`, background: wheelBg }} aria-hidden="true">
           {pool.map((c, i) => (
-            <span key={c.word} className="wheel-card" style={{ transform: `rotateY(${i * STEP}deg) translateZ(190px)` }}>
-              <span style={{ color: 'var(--zc)' }}>{cardArt(c, 64)}</span>
-              <b>{c.word}</b>
+            <span key={c.word} className="pw-seg" style={{ transform: `translate(-50%, -50%) rotate(${i * STEP}deg) translateY(-${radius}px)` }}>
+              {/* counter-rotate the card so it stays upright/readable as the wheel spins */}
+              <span className="pw-card" style={{ width: chip, transform: `rotate(${-(rot + i * STEP)}deg)` }}>
+                <span style={{ color: 'var(--zc)' }}>{cardArt(c, artSize)}</span><b>{c.word}</b></span>
             </span>
           ))}
         </div>
-      </div>
-      <div className="hud-pill" style={{ fontSize: 15 }}>Swipe the wheel to spin!</div>
+        <span className="pw-hub" aria-hidden="true" style={{ width: hub, height: hub }}><I n="replay" s={Math.round(size * 0.066)} /><b>Spin!</b></span>
+      </button>
       <div className="game-round">{round + 1} / {ROUNDS}</div>
       {burst && <Burst onDone={() => setBurst(false)} />}
       {end && <AdvStarsModal stars={end.stars} title="Wheel champion!" sub="What a spin!" I={I} Star={Star}
@@ -166,7 +199,7 @@ export function MagicDoors({ cat, speak, onDone, I, Star, Burst }) {
   const startRound = (r) => {
     const f = pool[r % pool.length];
     setFriend(f); setHider(Math.floor(Math.random() * 3)); setOpened([]); setSolved(false);
-    setTimeout(() => speak(`Knock knock! The ${f.word} is hiding behind a door. Which one?`), 400);
+    setTimeout(() => speak(`Find the ${f.word}!`), 400);
   };
   useEffect(() => { startRound(0); }, []);
 
@@ -174,6 +207,7 @@ export function MagicDoors({ cat, speak, onDone, I, Star, Burst }) {
     if (end || solved || opened.includes(i)) return;
     setOpened((o) => [...o, i]);
     if (i === hider) {
+      advSfx('yes');
       setSolved(true); speak(`Surprise! The ${friend.word}!`);
       setTimeout(() => {
         if (round + 1 >= ROUNDS) {
@@ -181,12 +215,12 @@ export function MagicDoors({ cat, speak, onDone, I, Star, Burst }) {
           setBurst(true); setEnd({ stars }); onDone('doors', stars);
         } else { setRound(round + 1); startRound(round + 1); }
       }, 1400);
-    } else { wrongs.current += 1; speak('Nobody here! Try another door!'); }
+    } else { advSfx('no'); wrongs.current += 1; speak('Nobody here! Try another door!'); }
   };
 
   return (
     <div className="game-area gctr" data-screen-label="Magic Doors">
-      <button className="qprompt game-ask" onClick={() => speak(`Where is the ${friend.word}?`)}>
+      <button className="qprompt game-ask" onClick={() => speak(`Find the ${friend.word}!`)}>
         <I n="sound" s={22} /> Find the <b>{friend.word}</b>!
       </button>
       <div className="hall">
@@ -234,12 +268,14 @@ export function UnfoldCube({ cat, speak, onDone, I, Star, Burst }) {
 
   const unfold = () => {
     if (end || unfolded >= 4) return;
+    advSfx('tap');
     setUnfolded((u) => u + 1);
     speak(unfolded + 1 >= 4 ? 'All open! What is it?' : 'Oooh! Peek!');
   };
   const guess = (c) => {
     if (end) return;
     if (c.word === answer.word) {
+      advSfx('yes');
       speak(`Yes! It's a ${answer.word}!`);
       setTimeout(() => {
         if (round + 1 >= ROUNDS) {
@@ -247,7 +283,7 @@ export function UnfoldCube({ cat, speak, onDone, I, Star, Burst }) {
           setBurst(true); setEnd({ stars }); onDone('unfold', stars);
         } else { setRound(round + 1); startRound(round + 1); }
       }, 900);
-    } else { wrongs.current += 1; speak('Keep peeking! Unfold more!'); }
+    } else { advSfx('no'); wrongs.current += 1; speak('Keep peeking! Unfold more!'); }
   };
 
   return (

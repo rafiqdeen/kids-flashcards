@@ -2,7 +2,7 @@
 // Next/Retry). Ported from adventure-app.jsx.
 import { Star } from '../art/icons.jsx';
 
-export function Complete({ stars, title, sub, onNext, onRetry, nextLabel }) {
+export function Complete({ stars, title, sub, onNext, onRetry, nextLabel, retryLabel }) {
   return (
     <div className="complete-scrim" data-testid="level-complete">
       <div className="complete-card">
@@ -16,7 +16,7 @@ export function Complete({ stars, title, sub, onNext, onRetry, nextLabel }) {
         <h2>{title}</h2>
         <p>{sub}</p>
         <div className="complete-actions">
-          {onRetry && <button className="gbtn blue" onClick={onRetry}>Try again</button>}
+          {onRetry && <button className="gbtn blue" data-testid="complete-retry" onClick={onRetry}>{retryLabel || 'Try again'}</button>}
           <button className="gbtn gold" data-testid="complete-next" onClick={onNext}>{nextLabel || 'Continue'}</button>
         </div>
       </div>

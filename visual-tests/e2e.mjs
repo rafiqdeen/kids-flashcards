@@ -127,7 +127,7 @@ async function main() {
     ok('   star count increased', parseInt(starCount.replace(/\D/g, ''), 10) >= 1, `stars="${starCount}"`);
 
     // ---- play a game ----
-    await page.click('[data-testid="node-animals-activity"]');
+    await page.click('[data-testid="open-play"]');
     await page.waitForSelector('[data-testid="activity-hub"]');
     await page.click('[data-testid="activity-pipsays"]');
     await label(page, 'Pip Says');
@@ -148,7 +148,7 @@ async function main() {
     await label(page, 'World map');
 
     // ---- Paint ----
-    await page.click('[data-testid="node-animals-activity"]');
+    await page.click('[data-testid="open-play"]');
     await page.click('[data-testid="activity-paint"]');
     await label(page, 'Paint studio');
     ok('10. Paint Studio opens', true);

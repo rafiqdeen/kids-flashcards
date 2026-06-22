@@ -49,4 +49,6 @@
 
   --r-md: 18px; --r-lg: 26px; --r-full: 999px;
   --pop: cubic-bezier(.34, 1.56, .64, 1);
+  /* bottom clearance reserved on every screen for the persistent nav dock */
+  --dock-h: calc(82px + env(safe-area-inset-bottom, 0px));
 }
