@@ -6,13 +6,15 @@
 // final tally falls through to 1 star even for 0 correct; the README and the
 // brief's functional test both specify ">0 -> 1" (so 0 correct -> 0), which
 // also matches this file's own on-screen `starsNow` meter. We use that.
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { HeroMascot } from '../art/Mascot.jsx';
 import { I, Star } from '../art/icons.jsx';
 import { art } from '../art/cardArt.jsx';
 import { ZONE_THEMES } from '../data/categories.js';
 import { CARDS } from '../data/cards.js';
 import { ADV_SET, advSfx } from '../audio.js';
+import { useInitialFocus } from '../hooks/useSpatialNav.js';
+import { useBackHandler } from '../hooks/useBackButton.js';
 
 export function QuizLevel({ cat, zone, onExit, onComplete, speak }) {
   const cards = (CARDS[cat.id] || []).slice(0, 6);
@@ -29,6 +31,9 @@ export function QuizLevel({ cat, zone, onExit, onComplete, speak }) {
   const [score, setScore] = useState(0);
   const th = ZONE_THEMES[zone];
   const q = quiz[qi];
+  const rootRef = useRef(null);
+  useInitialFocus(rootRef, [qi]); // land on (and re-land on) the first option each question
+  useBackHandler(onExit);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { const t = setTimeout(() => speak(`Find the ${q.target.word}!`), 450); return () => clearTimeout(t); }, [qi]);
@@ -49,10 +54,10 @@ export function QuizLevel({ cat, zone, onExit, onComplete, speak }) {
 
   const starsNow = score >= quiz.length * 0.99 ? 3 : score >= quiz.length * 0.66 ? 2 : score > 0 ? 1 : 0;
   return (
-    <div className="level" data-screen-label={`Quiz: ${cat.name}`}
+    <div className="level" data-screen-label={`Quiz: ${cat.name}`} ref={rootRef}
       style={{ background: `linear-gradient(180deg, ${th.sky[0]}, ${th.sky[1]} 75%, ${th.ground})`, '--zc': `var(--cat-${cat.color}-1)` }}>
       <div className="level-hud">
-        <button className="gbtn white round" aria-label="Back to map" data-testid="level-exit" onClick={onExit} style={{ minHeight: 50, width: 50 }}><I n="close" s={22} /></button>
+        <button className="gbtn white round" data-nav aria-label="Back to map" data-testid="level-exit" onClick={onExit} style={{ minHeight: 50, width: 50 }}><I n="close" s={22} /></button>
         <div className="level-bar"><i style={{ width: `${(qi / quiz.length) * 100}%` }} /></div>
         <span className="starmeter" aria-label={`${score} correct`}>
           {[1, 2, 3].map((k) => <span key={k} className={k <= starsNow ? 'pop' : 'dim'}><Star s={26} on={k <= starsNow} /></span>)}
@@ -60,7 +65,7 @@ export function QuizLevel({ cat, zone, onExit, onComplete, speak }) {
       </div>
       <div className="qwrap">
         <HeroMascot state="point" size={76} />
-        <button className="qprompt" onClick={() => speak(`Find the ${q.target.word}!`)}>
+        <button className="qprompt" data-nav onClick={() => speak(`Find the ${q.target.word}!`)}>
           <I n="sound" s={24} /> Find the <b>{q.target.word}</b>
         </button>
         <div className="qgrid2">
@@ -73,6 +78,7 @@ export function QuizLevel({ cat, zone, onExit, onComplete, speak }) {
             }
             return (
               <button key={opt.id + i} className={`qcard ${cls}`} data-testid={`quiz-option-${i}`}
+                data-nav data-nav-default={i === 0 ? '' : undefined}
                 disabled={!!picked} onClick={() => pick(i)}>
                 <span className="qa">{art(opt, 72)}</span>
                 {opt.word}

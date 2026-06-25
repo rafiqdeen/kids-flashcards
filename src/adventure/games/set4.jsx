@@ -7,7 +7,7 @@ import { StarsModal as AdvStarsModal } from './StarsModal.jsx';
 import { advSfx } from '../audio.js';
 
 /* ============ 13. MYSTERY BOXES (3D shell game) ============ */
-export function MysteryBoxes({ cat, speak, onDone, I, Star, Burst }) {
+export function MysteryBoxes({ cat, speak, onDone, I, Star, Burst, dpad }) {
   const pool = advGamePool(cat.id, 4, true);
   const ROUNDS = 4;
   const [round, setRound] = useState(0);
@@ -16,7 +16,7 @@ export function MysteryBoxes({ cat, speak, onDone, I, Star, Burst }) {
   const [slots, setSlots] = useState([0, 1, 2]);   // box i renders at slot[i]
   const [phase, setPhase] = useState('show');      // show|shuffle|guess|reveal
   const [open, setOpen] = useState([true, true, true]);
-  const [spd, setSpd] = useState(1);     // index into SPEEDS (default Normal)
+  const [spd, setSpd] = useState(dpad ? 0 : 1);     // index into SPEEDS (default Normal)
   const [end, setEnd] = useState(null);
   const [burst, setBurst] = useState(false);
   const wrongs = useRef(0);
@@ -68,7 +68,7 @@ export function MysteryBoxes({ cat, speak, onDone, I, Star, Burst }) {
       <SpeedPills value={spd} onChange={setSpd} />
       <div className="boxes-stage">
         {[0, 1, 2].map((i) => (
-          <button key={i} className={`mbox ${open[i] ? 'open' : ''}`}
+          <button key={i} className={`mbox ${open[i] ? 'open' : ''}`} data-nav {...(i === 0 ? { 'data-nav-default': '' } : {})}
             style={{ transform: `translateX(${(slots[i] - 1) * 130}px)`, transition: `transform ${(0.55 / mul).toFixed(2)}s` }}
             aria-label={`Box ${i + 1}`} disabled={phase !== 'guess'} onClick={() => pick(i)}>
             <span className="mbox-shadow" aria-hidden="true" />
@@ -157,10 +157,10 @@ export function PrizeWheel({ cat, speak, onDone, I, Star, Burst }) {
   const wheelBg = `conic-gradient(from -30deg, ${WHEEL_COLORS.map((c, i) => `${c} ${i * STEP}deg ${(i + 1) * STEP}deg`).join(', ')})`;
   return (
     <div className="game-area gctr" data-screen-label="Prize Wheel">
-      <button className="qprompt game-ask" onClick={() => speak(`Find the ${target.word}!`)}>
+      <button className="qprompt game-ask" data-nav onClick={() => speak(`Find the ${target.word}!`)}>
         <I n="sound" s={22} /> Spin to the <b>{target.word}</b>!
       </button>
-      <button className="pw-scene" data-testid="wheel-spin" onClick={spin} disabled={spinning || !!end}
+      <button className="pw-scene" data-nav data-nav-default="" data-testid="wheel-spin" onClick={spin} disabled={spinning || !!end}
         aria-label={spinning ? 'Spinning…' : `Tap to spin the wheel. It shows ${pool[frontIdx].word}.`}
         style={{ width: size, height: size, touchAction: 'manipulation' }}>
         <span className="pw-pointer" aria-hidden="true" />
@@ -220,12 +220,12 @@ export function MagicDoors({ cat, speak, onDone, I, Star, Burst }) {
 
   return (
     <div className="game-area gctr" data-screen-label="Magic Doors">
-      <button className="qprompt game-ask" onClick={() => speak(`Find the ${friend.word}!`)}>
+      <button className="qprompt game-ask" data-nav onClick={() => speak(`Find the ${friend.word}!`)}>
         <I n="sound" s={22} /> Find the <b>{friend.word}</b>!
       </button>
       <div className="hall">
         {[0, 1, 2].map((i) => (
-          <button key={i} className={`doorway ${opened.includes(i) ? 'open' : ''}`}
+          <button key={i} className={`doorway ${opened.includes(i) ? 'open' : ''}`} data-nav {...(i === 0 ? { 'data-nav-default': '' } : {})}
             aria-label={opened.includes(i) ? (i === hider ? friend.word : 'Empty room') : `Door ${i + 1}`}
             onClick={() => pick(i)}>
             <span className="door-room">
@@ -289,7 +289,7 @@ export function UnfoldCube({ cat, speak, onDone, I, Star, Burst }) {
   return (
     <div className="game-area gctr" data-screen-label="Unfold the Cube">
       <div className="game-ask hud-pill">Tap the paper to unfold it!</div>
-      <button className="fold-scene" onClick={unfold} aria-label={`Folded picture, ${unfolded} of 4 panels open. Tap to unfold.`}>
+      <button className="fold-scene" data-nav data-nav-default="" onClick={unfold} aria-label={`Folded picture, ${unfolded} of 4 panels open. Tap to unfold.`}>
         <span className="fold-pic" style={{ color: 'var(--zc)' }}>{cardArt(answer, 150)}</span>
         <span className={`fold-flap top ${unfolded >= 1 ? 'open' : ''}`} />
         <span className={`fold-flap right ${unfolded >= 2 ? 'open' : ''}`} />
@@ -298,7 +298,7 @@ export function UnfoldCube({ cat, speak, onDone, I, Star, Burst }) {
       </button>
       <div className="says-row" style={{ paddingTop: 0 }}>
         {choices.map((c) => (
-          <button key={c.word} className="says-card" style={{ width: 110, padding: '12px 8px 10px' }}
+          <button key={c.word} className="says-card" data-nav style={{ width: 110, padding: '12px 8px 10px' }}
             aria-label={c.word} onClick={() => guess(c)}><b>{c.word}</b></button>
         ))}
       </div>

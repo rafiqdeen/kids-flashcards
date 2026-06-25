@@ -9,6 +9,7 @@ import { useSpeech as useHardenedSpeech } from '../../pip/speech.js';
 import { announce } from '../bus.js';
 import { NARRATION } from '../data/narrationManifest.js';
 import { narrationKey } from '../data/narrationKey.js';
+import { isTvMode } from '../tv.js';
 
 // Rough narration duration (seconds) for the live-speech path or when clip
 // metadata is missing — mirrors the generator's cadence (~150 wpm + a beat per
@@ -52,7 +53,10 @@ export function useSpeech(disabled) {
 
     const live = (t) => {           // live Web-Speech voice (no real timeline → estimate)
       stopClip();
-      rawSpeak(t, { rate: 0.9, pitch: 1.0 });
+      // On TV (Android WebView) speechSynthesis voices are unreliable/absent and can
+      // hang silently — prefer the bundled m4a clips and go caption-only for the few
+      // dynamic lines that have no clip, rather than waiting on a voice that won't load.
+      if (!isTvMode()) rawSpeak(t, { rate: 0.9, pitch: 1.0 });
       const d = estimateDuration(t); cb.onStart?.({ duration: d });
       if (cb.onDone) liveTimer.current = setTimeout(cb.onDone, d * 1000);
     };

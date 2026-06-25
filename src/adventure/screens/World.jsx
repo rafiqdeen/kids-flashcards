@@ -4,22 +4,40 @@
 // own top-level room (Pip's Playground, the Play FAB), a sibling of Story Land —
 // it used to be a 4th per-zone node. Unlock rule: zone N opens once the previous
 // zone's quiz is cleared (adv[prevCat].quizStars > 0); zone 0 always.
+import { useRef } from 'react';
 import { Mascot, HeroMascot } from '../art/Mascot.jsx';
 import { Illu } from '../art/Illu.jsx';
 import { I, Star } from '../art/icons.jsx';
 import { CATEGORIES, ZONE_THEMES, ZONE_CATS } from '../data/categories.js';
+import { useInitialFocus } from '../hooks/useSpatialNav.js';
 
 const TRAIL_H = 380;
 const NODE_POS = [{ x: 26, y: 18 }, { x: 72, y: 50 }, { x: 30, y: 84 }];
+const NODE_IDS = ['learn', 'quiz', 'chest'];
 
-export function World({ adv, onPlay, muted, setMuted, onSettings, profile, buddy, onProfiles }) {
+export function World({ adv, onPlay, muted, setMuted, onSettings, profile, buddy, onProfiles, focusZone }) {
   const totalStars = Object.values(adv).reduce((s, z) => s + (z.learnStars || 0) + (z.quizStars || 0), 0);
+  const rootRef = useRef(null);
+  useInitialFocus(rootRef); // land on the data-nav-default node (the zone we left / first playable)
+  // Which node should the D-pad land on: the playable node of the zone we last left, else
+  // zone 0's playable node. (Mirrors the per-zone state logic below.)
+  const zoneCurrentIdx = (zi) => {
+    const catId = ZONE_CATS[zi]; const z = adv[catId] || {};
+    const prevDone = zi === 0 || ((adv[ZONE_CATS[zi - 1]] || {}).quizStars > 0);
+    if (!prevDone) return -1;
+    if (!((z.learnStars || 0) > 0)) return 0;
+    if (!((z.quizStars || 0) > 0)) return 1;
+    return z.chest ? 0 : 2;
+  };
+  const fZi = focusZone ? ZONE_CATS.indexOf(focusZone) : -1;
+  const defZi = (fZi >= 0 && zoneCurrentIdx(fZi) >= 0) ? fZi : 0;
+  const defKey = `${ZONE_CATS[defZi]}-${NODE_IDS[Math.max(0, zoneCurrentIdx(defZi))]}`;
   return (
-    <div className="world" data-screen-label="World map">
+    <div className="world" data-screen-label="World map" ref={rootRef}>
       <div className="world-hud">
         <div className="hud-left">
           <span className="hud-brand">Pip<em>!</em><span className="hb-x"> Adventure</span></span>
-          <button className="hud-profile" data-testid="open-profiles" aria-label={`${profile ? profile.name : 'Player'} — switch profile`} onClick={onProfiles}>
+          <button className="hud-profile" data-nav data-testid="open-profiles" aria-label={`${profile ? profile.name : 'Player'} — switch profile`} onClick={onProfiles}>
             <span className="hud-profile-av"><Mascot concept={buddy || (profile && profile.buddy) || 'pip'} state="idle" size={40} /></span>
             <span className="hud-profile-name">{profile && profile.name ? profile.name : 'Player'}</span>
           </button>
@@ -27,11 +45,11 @@ export function World({ adv, onPlay, muted, setMuted, onSettings, profile, buddy
         <div className="hud-right">
           <div className="hud-utils">
             <span className="hud-pill" data-testid="star-count"><span className="ico"><Star s={22} /></span>{totalStars}</span>
-            <button className="gbtn white round" aria-label={muted ? 'Turn voice on' : 'Turn voice off'} aria-pressed={muted}
+            <button className="gbtn white round" data-nav aria-label={muted ? 'Turn voice on' : 'Turn voice off'} aria-pressed={muted}
               data-testid="mute-toggle" onClick={() => setMuted((m) => !m)} style={{ minHeight: 48, width: 48 }}>
               <I n={muted ? 'mute' : 'sound'} s={22} />
             </button>
-            <button className="gbtn white round" aria-label="Settings for grown-ups"
+            <button className="gbtn white round" data-nav aria-label="Settings for grown-ups"
               data-testid="open-settings" onClick={onSettings} style={{ minHeight: 48, width: 48 }}>
               <I n="gear" s={22} />
             </button>
@@ -82,6 +100,7 @@ export function World({ adv, onPlay, muted, setMuted, onSettings, profile, buddy
                   className={`node ${node.state}`}
                   style={{ left: `${NODE_POS[ni].x}%`, top: `${NODE_POS[ni].y}%` }}
                   data-testid={`node-${catId}-${node.id}`}
+                  data-nav data-nav-default={`${catId}-${node.id}` === defKey ? '' : undefined}
                   disabled={node.state === 'locked'}
                   aria-label={`${cat.name} ${node.label}. ${node.state === 'locked' ? 'Locked.' : node.state === 'done' ? 'Done!' : 'Ready to play!'}`}
                   onClick={() => onPlay(cat, node.id, zi)}>

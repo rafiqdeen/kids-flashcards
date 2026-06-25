@@ -7,8 +7,14 @@ import { App } from './App.jsx';
 import { WelcomeScreen, CreateProfile, ProfilePicker, ProfileSheet, ParentGate } from './screens/Profiles.jsx';
 import { useSpeech } from './hooks/useSpeech.js';
 import { loadProfiles, saveProfiles, getActiveId, setActiveId } from './data/profiles.js';
+import { useBackButton } from './hooks/useBackButton.js';
+import { useSpatialNav } from './hooks/useSpatialNav.js';
 
 export function AdventureApp() {
+  // Install the ONE global BACK handler + D-pad navigator here (always mounted), so they
+  // cover the profile phases (welcome/picker) too, not just the inner App. No-op off TV.
+  useBackButton();
+  useSpatialNav();
   const { speak } = useSpeech(false); // welcome/profile-phase narration (settings not loaded yet)
   const [profiles, setProfiles] = useState(() => loadProfiles());
   const [activeId, setActiveIdState] = useState(() => {

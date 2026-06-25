@@ -19,7 +19,7 @@ export function Dock({ active, onNavigate, inert = false }) {
       <div className="dock-bar">
         {TABS.map((t) => (
           <button key={t.key} className={`dock-tab${active === t.key ? ' active' : ''}`}
-            data-testid={t.testid} aria-current={active === t.key ? 'page' : undefined}
+            data-nav data-testid={t.testid} aria-current={active === t.key ? 'page' : undefined}
             aria-label={t.label} onClick={() => onNavigate(t.key)}>
             <span className="dock-ico"><I n={t.icon} s={26} /></span>
             <span className="dock-label">{t.label}</span>

@@ -2,12 +2,15 @@
 // back = word + speak). Mascot narrates; TTS speaks the phrase. Marking every
 // card "known" completes the deck and awards 3 stars. Ported from
 // adventure-app.jsx. Keyboard: ←/→ navigate, space/enter flips, Esc exits.
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { I } from '../art/icons.jsx';
 import { art, backArt } from '../art/cardArt.jsx';
 import { Burst } from '../components/Burst.jsx';
 import { ZONE_THEMES } from '../data/categories.js';
 import { CARDS } from '../data/cards.js';
+import { isTvMode } from '../tv.js';
+import { useInitialFocus } from '../hooks/useSpatialNav.js';
+import { useBackHandler } from '../hooks/useBackButton.js';
 
 export function LearnLevel({ cat, zone, pid, onExit, onComplete, speak, speaking }) {
   // show the FULL deck for every category (no cap). Mastered cards persist per
@@ -23,6 +26,9 @@ export function LearnLevel({ cat, zone, pid, onExit, onComplete, speak, speaking
   const [burst, setBurst] = useState(false);
   const card = cards[idx];
   const th = ZONE_THEMES[zone];
+  const rootRef = useRef(null);
+  useInitialFocus(rootRef); // land on the flashcard (Enter flips it)
+  useBackHandler(onExit);
 
   const flip = () => { const nf = !flipped; setFlipped(nf); if (nf) speak(card.phrase); };
   const go = (d) => { setIdx((i) => (i + d + cards.length) % cards.length); setFlipped(false); };
@@ -35,7 +41,12 @@ export function LearnLevel({ cat, zone, pid, onExit, onComplete, speak, speaking
     else setTimeout(() => go(1), 700);
   };
 
+  // Desktop keyboard convenience. In TV mode the global D-pad navigator drives focus
+  // among the on-screen buttons (prev/card/next/speak/got-it) and BACK is unified, so
+  // this ad-hoc handler stands down to avoid double-firing (e.g. arrow moving focus AND
+  // flipping the deck).
   useEffect(() => {
+    if (isTvMode()) return undefined;
     const h = (e) => {
       if (e.key === 'ArrowRight') go(1);
       else if (e.key === 'ArrowLeft') go(-1);
@@ -47,16 +58,17 @@ export function LearnLevel({ cat, zone, pid, onExit, onComplete, speak, speaking
   }, [idx, flipped, known]);
 
   return (
-    <div className="level" data-screen-label={`Learn: ${cat.name}`}
+    <div className="level" data-screen-label={`Learn: ${cat.name}`} ref={rootRef}
       style={{ background: `linear-gradient(180deg, ${th.sky[0]}, ${th.sky[1]} 75%, ${th.ground})`, '--zc': `var(--cat-${cat.color}-1)` }}>
       <div className="level-hud">
-        <button className="gbtn white round" aria-label="Back to map" data-testid="level-exit" onClick={onExit} style={{ minHeight: 50, width: 50 }}><I n="close" s={22} /></button>
+        <button className="gbtn white round" data-nav aria-label="Back to map" data-testid="level-exit" onClick={onExit} style={{ minHeight: 50, width: 50 }}><I n="close" s={22} /></button>
         <div className="level-bar"><i style={{ width: `${(known.size / cards.length) * 100}%` }} /></div>
         <span className="hud-pill" style={{ height: 44, fontSize: 16 }}>{known.size}/{cards.length}</span>
       </div>
       <div className="level-stage">
-        <span className="arrowg l"><button className="gbtn white round" aria-label="Previous card" data-testid="nav-prev" onClick={() => go(-1)}><I n="back" /></button></span>
+        <span className="arrowg l"><button className="gbtn white round" data-nav aria-label="Previous card" data-testid="nav-prev" onClick={() => go(-1)}><I n="back" /></button></span>
         <button key={card.id} className={`acard ${flipped ? 'flipped' : ''}`} data-testid="flashcard"
+          data-nav data-nav-default=""
           aria-label={flipped ? `${card.word}. Tap to flip back.` : 'Card. Tap to reveal.'} onClick={flip}>
           <span className="acard-3d">
             <span className="aface front"><span className="frame" />{art(card, 180)}<span className="ahint">tap the card!</span></span>
@@ -68,14 +80,14 @@ export function LearnLevel({ cat, zone, pid, onExit, onComplete, speak, speaking
             </span>
           </span>
         </button>
-        <span className="arrowg r"><button className="gbtn white round" aria-label="Next card" data-testid="nav-next" onClick={() => go(1)}><I n="next" /></button></span>
+        <span className="arrowg r"><button className="gbtn white round" data-nav aria-label="Next card" data-testid="nav-next" onClick={() => go(1)}><I n="next" /></button></span>
       </div>
       <div className="level-foot">
-        <button className={`speakg ${speaking ? 'playing' : ''}`} aria-label="Hear it" data-testid="speak-button"
+        <button className={`speakg ${speaking ? 'playing' : ''}`} data-nav aria-label="Hear it" data-testid="speak-button"
           onClick={() => speak(card.phrase)}>
           <span className="ring" /><span className="ring" /><I n="sound" s={32} />
         </button>
-        <button className="gbtn" data-testid="mastered-button" disabled={!flipped && !known.has(card.id)} onClick={know}>
+        <button className="gbtn" data-nav data-testid="mastered-button" disabled={!flipped && !known.has(card.id)} onClick={know}>
           <I n={known.has(card.id) ? 'check' : 'star'} s={22} />
           {known.has(card.id) ? 'Got it!' : flipped ? 'I know this!' : 'Flip the card first'}
         </button>

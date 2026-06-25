@@ -49,7 +49,7 @@ export function BlockStacker({ speak, onDone, I, Star, Burst }) {
         </div>
         <span className="stack-ground" aria-hidden="true" />
       </div>
-      <button className="gbtn gold" style={{ marginBottom: 6 }} disabled={dropping || blocks.length >= GOAL} onClick={drop} data-testid="stack-drop">
+      <button className="gbtn gold" style={{ marginBottom: 6 }} disabled={dropping || blocks.length >= GOAL} onClick={drop} data-testid="stack-drop" data-nav data-nav-default="">
         <I n="cube" s={24} /> Drop a block!
       </button>
       {burst && <Burst onDone={() => setBurst(false)} />}
@@ -60,17 +60,18 @@ export function BlockStacker({ speak, onDone, I, Star, Burst }) {
 }
 
 /* ============ 18. TUNNEL RUNNER (fly-at-you tapping) ============ */
-export function TunnelRunner({ cat, speak, onDone, I, Star, Burst }) {
+export function TunnelRunner({ cat, speak, onDone, I, Star, Burst, dpad }) {
   const pool = advGamePool(cat.id, 4, true);
   const GOAL = 7;
   const [items, setItems] = useState([]);
   const [target] = useState(pool[0]); // target is fixed for the whole run
   const [score, setScore] = useState(0);
-  const [spd, setSpd] = useState(1);
+  const [spd, setSpd] = useState(dpad ? 0 : 1);
   const mul = SPEEDS[spd].mul;
   const [end, setEnd] = useState(null);
   const [burst, setBurst] = useState(false);
   const wrongs = useRef(0);
+  const doneRef = useRef(false); // set synchronously at the goal so a rapid post-goal OK can't fire onDone twice
   const stateRef = useRef({}); stateRef.current = { end, target };
 
   useEffect(() => { const t = setTimeout(() => speak(`Find the ${pool[0].word}!`), 500); return () => clearTimeout(t); }, []);
@@ -90,7 +91,7 @@ export function TunnelRunner({ cat, speak, onDone, I, Star, Burst }) {
   }, [end, spd]);
 
   const tap = (it) => {
-    if (end || it.hit) return;
+    if (end || doneRef.current || it.hit) return;
     if (it.card.word === target.word) {
       const ns = score + 1; setScore(ns);
       setItems((a) => a.map((x) => x.k === it.k ? { ...x, hit: true } : x));
@@ -98,6 +99,7 @@ export function TunnelRunner({ cat, speak, onDone, I, Star, Burst }) {
       advSfx('yes');
       speak(ns >= GOAL ? 'You caught them all!' : 'Got it!');
       if (ns >= GOAL) {
+        doneRef.current = true; // lock out further taps before the async end state lands
         const stars = wrongs.current === 0 ? 3 : wrongs.current <= 2 ? 2 : 1;
         setBurst(true); setTimeout(() => { setEnd({ stars }); onDone('tunnel', stars); }, 800);
       }
@@ -106,7 +108,7 @@ export function TunnelRunner({ cat, speak, onDone, I, Star, Burst }) {
 
   return (
     <div className="game-area tunnel" data-screen-label="Tunnel Runner">
-      <button className="qprompt game-ask" onClick={() => speak(`Find the ${target.word}!`)}>
+      <button className="qprompt game-ask" onClick={() => speak(`Find the ${target.word}!`)} data-nav data-nav-default="">
         <I n="sound" s={22} /> Tap every <b>{target.word}</b>!
       </button>
       <SpeedPills value={spd} onChange={setSpd} />
@@ -114,7 +116,7 @@ export function TunnelRunner({ cat, speak, onDone, I, Star, Burst }) {
         {[0, 1, 2, 3].map((i) => <span key={i} className="tunnel-ring" style={{ animationDelay: `${i * 1}s` }} aria-hidden="true" />)}
         {items.map((it) => (
           <button key={it.k} className={`tunnel-item ${it.hit ? 'hit' : ''}`} style={{ left: `${it.x}%`, top: `${it.y}%`, animationDuration: `${(4.2 / mul).toFixed(1)}s` }}
-            aria-label={it.card.word} onClick={() => tap(it)}>
+            aria-label={it.card.word} onClick={() => tap(it)} data-nav disabled={it.hit}>
             <span style={{ color: 'var(--zc)' }}>{cardArt(it.card, 54)}</span>
           </button>
         ))}
@@ -122,32 +124,35 @@ export function TunnelRunner({ cat, speak, onDone, I, Star, Burst }) {
       <div className="game-round">{score} / {GOAL}</div>
       {burst && <Burst onDone={() => setBurst(false)} />}
       {end && <AdvStarsModal stars={end.stars} title="Super speedy!" sub="Nothing gets past you!" I={I} Star={Star}
-        onAgain={() => { setEnd(null); setScore(0); wrongs.current = 0; setItems([]); }} onBack={() => onDone('__back')} />}
+        onAgain={() => { setEnd(null); setScore(0); wrongs.current = 0; doneRef.current = false; setItems([]); }} onBack={() => onDone('__back')} />}
     </div>
   );
 }
 
 /* ============ 19. CARD FOUNTAIN (3D orbit ring) ============ */
-export function CardFountain({ cat, speak, onDone, I, Star, Burst }) {
+export function CardFountain({ cat, speak, onDone, I, Star, Burst, dpad }) {
   const pool = advGamePool(cat.id, 6, true);
   const ROUNDS = 5;
   const [round, setRound] = useState(0);
   const [target, setTarget] = useState(pool[0]);
   const [caught, setCaught] = useState([]);
-  const [spd, setSpd] = useState(1);
+  const [spd, setSpd] = useState(dpad ? 0 : 1);
   const mul = SPEEDS[spd].mul;
   const [end, setEnd] = useState(null);
   const [burst, setBurst] = useState(false);
   const wrongs = useRef(0);
+  const doneRef = useRef(false); // set synchronously at the goal so a rapid post-goal OK can't fire onDone twice
 
   useEffect(() => { const t = setTimeout(() => speak(`Find the ${target.word}!`), 500); return () => clearTimeout(t); }, [round]);
 
   const tap = (c) => {
-    if (end || caught.includes(c.word)) return;
+    if (end || doneRef.current || caught.includes(c.word)) return;
     if (c.word === target.word) {
+      const finalRound = round + 1 >= ROUNDS;
+      if (finalRound) doneRef.current = true; // lock out further taps before end state lands
       setCaught((g) => [...g, c.word]); advSfx('yes'); speak(`${c.word}! Got it!`);
       setTimeout(() => {
-        if (round + 1 >= ROUNDS) {
+        if (finalRound) {
           const stars = wrongs.current === 0 ? 3 : wrongs.current <= 2 ? 2 : 1;
           setBurst(true); setEnd({ stars }); onDone('fountain', stars);
         } else {
@@ -161,7 +166,7 @@ export function CardFountain({ cat, speak, onDone, I, Star, Burst }) {
 
   return (
     <div className="game-area" data-screen-label="Card Fountain">
-      <button className="qprompt game-ask" onClick={() => speak(`Find the ${target.word}!`)}>
+      <button className="qprompt game-ask" onClick={() => speak(`Find the ${target.word}!`)} data-nav data-nav-default="">
         <I n="sound" s={22} /> Tap the <b>{target.word}</b> as it dances by!
       </button>
       <SpeedPills value={spd} onChange={setSpd} />
@@ -170,7 +175,7 @@ export function CardFountain({ cat, speak, onDone, I, Star, Burst }) {
         <div className="fountain-ring" style={{ animationDuration: `${(14 / mul).toFixed(1)}s` }}>
           {pool.map((c, i) => (
             <button key={c.word} className={`fountain-card ${caught.includes(c.word) ? 'gone' : ''}`}
-              style={{ '--fa': `${i * 60}deg` }} aria-label={c.word} onClick={() => tap(c)}>
+              style={{ '--fa': `${i * 60}deg` }} aria-label={c.word} onClick={() => tap(c)} data-nav disabled={caught.includes(c.word)}>
               <span style={{ color: 'var(--zc)' }}>{cardArt(c, 50)}</span>
               <b>{c.word}</b>
             </button>
@@ -180,24 +185,25 @@ export function CardFountain({ cat, speak, onDone, I, Star, Burst }) {
       <div className="game-round">{round + 1} / {ROUNDS}</div>
       {burst && <Burst onDone={() => setBurst(false)} />}
       {end && <AdvStarsModal stars={end.stars} title="Fountain catcher!" sub="You caught the dancing cards!" I={I} Star={Star}
-        onAgain={() => { setEnd(null); setRound(0); wrongs.current = 0; setCaught([]); }} onBack={() => onDone('__back')} />}
+        onAgain={() => { setEnd(null); setRound(0); wrongs.current = 0; doneRef.current = false; setCaught([]); }} onBack={() => onDone('__back')} />}
     </div>
   );
 }
 
 /* ============ 20. BALLOON FLOAT (depth-layer popping) ============ */
 const BALLOON_HUES = ['#ff4b4b', '#ffc83d', '#58cc02', '#1cb0f6', '#a560e8'];
-export function BalloonFloat({ cat, speak, onDone, I, Star, Burst }) {
+export function BalloonFloat({ cat, speak, onDone, I, Star, Burst, dpad }) {
   const pool = advGamePool(cat.id, 5, true);
   const ROUNDS = 6;
   const [round, setRound] = useState(0);
   const [balloons, setBalloons] = useState([]);
   const [target, setTarget] = useState(pool[0]);
-  const [spd, setSpd] = useState(1);
+  const [spd, setSpd] = useState(dpad ? 0 : 1);
   const mul = SPEEDS[spd].mul;
   const [end, setEnd] = useState(null);
   const [burst, setBurst] = useState(false);
   const wrongs = useRef(0);
+  const doneRef = useRef(false); // set synchronously at the goal so a rapid post-goal OK can't fire onDone twice
 
   const spawn = (r) => {
     const t = pool[r % pool.length];
@@ -215,13 +221,15 @@ export function BalloonFloat({ cat, speak, onDone, I, Star, Burst }) {
   useEffect(() => { const t = setTimeout(() => speak(`Find the ${target.word}!`), 600); return () => clearTimeout(t); }, [round]);
 
   const tap = (b) => {
-    if (b.popped || end) return;
+    if (b.popped || end || doneRef.current) return;
     if (b.card.word === target.word) {
+      const finalRound = round + 1 >= ROUNDS;
+      if (finalRound) doneRef.current = true; // lock out further taps before end state lands
       setBalloons((bs) => bs.map((x) => x.k === b.k ? { ...x, popped: true } : x));
       advSfx('pop');
       speak('Pop!');
       setTimeout(() => {
-        if (round + 1 >= ROUNDS) {
+        if (finalRound) {
           const stars = wrongs.current === 0 ? 3 : wrongs.current <= 2 ? 2 : 1;
           setBurst(true); setEnd({ stars }); onDone('balloon', stars);
         } else { setRound(round + 1); spawn(round + 1); }
@@ -231,7 +239,7 @@ export function BalloonFloat({ cat, speak, onDone, I, Star, Burst }) {
 
   return (
     <div className="game-area" data-screen-label="Balloon Float">
-      <button className="qprompt game-ask" onClick={() => speak(`Find the ${target.word}!`)}>
+      <button className="qprompt game-ask" onClick={() => speak(`Find the ${target.word}!`)} data-nav data-nav-default="">
         <I n="sound" s={22} /> Pop the <b>{target.word}</b> balloon!
       </button>
       <SpeedPills value={spd} onChange={setSpd} />
@@ -239,7 +247,7 @@ export function BalloonFloat({ cat, speak, onDone, I, Star, Burst }) {
         {balloons.map((b) => (
           <button key={b.k} className={`balloon d${b.depth} ${b.popped ? 'popped' : ''}`}
             style={{ left: `${b.left}%`, animationDuration: `${(b.dur / mul).toFixed(2)}s`, animationDelay: `${b.delay}s`, '--bh': b.hue }}
-            aria-label={b.card.word} onClick={() => tap(b)}>
+            aria-label={b.card.word} onClick={() => tap(b)} data-nav disabled={b.popped}>
             <span className="balloon-skin">
               <span className="balloon-art" style={{ color: '#fff' }}>{cardArt(b.card, 44)}</span>
             </span>
@@ -250,7 +258,7 @@ export function BalloonFloat({ cat, speak, onDone, I, Star, Burst }) {
       <div className="game-round">{Math.min(round + 1, ROUNDS)} / {ROUNDS}</div>
       {burst && <Burst onDone={() => setBurst(false)} />}
       {end && <AdvStarsModal stars={end.stars} title="Balloon popper!" sub="Pop pop pop — all gone!" I={I} Star={Star}
-        onAgain={() => { setEnd(null); setRound(0); wrongs.current = 0; spawn(0); }} onBack={() => onDone('__back')} />}
+        onAgain={() => { setEnd(null); setRound(0); wrongs.current = 0; doneRef.current = false; spawn(0); }} onBack={() => onDone('__back')} />}
     </div>
   );
 }

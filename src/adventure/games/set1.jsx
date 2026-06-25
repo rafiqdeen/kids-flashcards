@@ -8,14 +8,15 @@ import { StarsModal } from './StarsModal.jsx';
 import { advSfx } from '../audio.js';
 
 /* ============ 1. BUBBLE POP ============ */
-export function BubblePop({ cat, speak, onDone, I, Star, Burst }) {
+export function BubblePop({ cat, speak, onDone, I, Star, Burst, dpad }) {
   const cards = advGamePool(cat.id, 6, true);
   const ROUNDS = 8;
   const [round, setRound] = useState(0);
   const [bubbles, setBubbles] = useState([]);
   const [misses, setMisses] = useState(0);
-  const [spd, setSpd] = useState(1);     // index into SPEEDS (default Normal)
+  const [spd, setSpd] = useState(dpad ? 0 : 1);     // index into SPEEDS (default Normal; slowest on TV)
   const [end, setEnd] = useState(null);
+  const doneRef = useRef(false); // synchronous goal lock so a rapid post-goal OK can't fire onDone twice
   const [burst, setBurst] = useState(false);
   const target = cards[round % cards.length];
   const mul = SPEEDS[spd].mul;
@@ -32,13 +33,15 @@ export function BubblePop({ cat, speak, onDone, I, Star, Burst }) {
   useEffect(() => { const t = setTimeout(() => speak(`Find the ${target.word}!`), 500); return () => clearTimeout(t); }, [round]);
 
   const tap = (b) => {
-    if (b.popped || end) return;
+    if (b.popped || end || doneRef.current) return;
     if (b.card.id === target.id) {
+      const finalRound = round + 1 >= ROUNDS;
+      if (finalRound) doneRef.current = true; // lock out further taps before end state lands
       setBubbles((bs) => bs.map((x) => x.k === b.k ? { ...x, popped: true } : x));
       advSfx('pop');
       speak('Pop! Yes!');
       setTimeout(() => {
-        if (round + 1 >= ROUNDS) {
+        if (finalRound) {
           const stars = misses === 0 ? 3 : misses <= 3 ? 2 : 1;
           setBurst(true); setEnd({ stars }); onDone('bubble', stars);
         } else { setRound(round + 1); spawn(round + 1); }
@@ -59,10 +62,11 @@ export function BubblePop({ cat, speak, onDone, I, Star, Burst }) {
       </button>
       <SpeedPills value={spd} onChange={setSpd} />
       <div className="bub-sky">
-        {bubbles.map((b) => (
+        {bubbles.map((b, i) => (
           <button key={b.k} className={`bub ${b.popped ? 'popped' : ''} ${b.wob ? 'wob' : ''}`}
             style={{ left: `${b.left}%`, animationDuration: `${(b.dur / mul).toFixed(2)}s`, animationDelay: `${b.delay}s` }}
-            aria-label={b.card.word} onClick={() => tap(b)}>
+            data-nav {...(i === 0 ? { 'data-nav-default': '' } : {})}
+            aria-label={b.card.word} onClick={() => tap(b)} disabled={b.popped}>
             <span className="bub-skin" />
             <span className="bub-art" style={{ color: 'var(--zc)' }}>{cardArt(b.card, 66)}</span>
             {b.popped && <span className="bub-burst">{[...Array(6)].map((_, i) => <i key={i} style={{ '--a': `${i * 60}deg` }} />)}</span>}
@@ -72,7 +76,7 @@ export function BubblePop({ cat, speak, onDone, I, Star, Burst }) {
       <div className="game-round">{Math.min(round + 1, ROUNDS)} / {ROUNDS}</div>
       {burst && <Burst onDone={() => setBurst(false)} />}
       {end && <StarsModal stars={end.stars} title="Pop-tastic!" sub="You popped them all!" I={I} Star={Star}
-        onAgain={() => { setEnd(null); setRound(0); setMisses(0); spawn(0); }} onBack={() => onDone('__back')} />}
+        onAgain={() => { setEnd(null); setRound(0); setMisses(0); doneRef.current = false; spawn(0); }} onBack={() => onDone('__back')} />}
     </div>
   );
 }
@@ -115,10 +119,11 @@ export function MemoryMatch({ cat, speak, onDone, I, Star, Burst }) {
     <div className="game-area gctr" data-screen-label="Memory Match">
       <div className="game-ask hud-pill">Find the pairs! · {moves} flips</div>
       <div className="mem-grid">
-        {tiles.map((t) => {
+        {tiles.map((t, i) => {
           const face = up.includes(t.k) || matched.includes(t.k);
           return (
             <button key={t.k} className={`mcard ${face ? 'face' : ''} ${matched.includes(t.k) ? 'won' : ''}`}
+              data-nav {...(i === 0 ? { 'data-nav-default': '' } : {})}
               aria-label={face ? t.c.word : 'Hidden card'} onClick={() => flip(t)}>
               <span className="mcard-3d">
                 <span className="mface mback"><I n="star" s={30} /></span>
@@ -158,7 +163,7 @@ const TRACE_SETS = {
   colors: ['wave', 'zig', 'circle'],
   body: ['circle', 'wave', 'hill'],
 };
-export function Tracing({ cat, speak, onDone, I, Star, Burst }) {
+export function Tracing({ cat, speak, onDone, I, Star, Burst, dpad }) {
   const set = (TRACE_SETS[cat.id] || TRACE_SETS.shapes).map((k) => TRACE_LIB[k]);
   const [g, setG] = useState(0);
   const tr = set[g];
@@ -183,12 +188,8 @@ export function Tracing({ cat, speak, onDone, I, Star, Burst }) {
     const r = svgRef.current.getBoundingClientRect();
     return { x: (e.clientX - r.left) * (100 / r.width), y: (e.clientY - r.top) * (100 / r.height) };
   };
-  const advance = (e) => {
-    const p = toSvg(e); const pts = ptsRef.current;
-    let i = idxRef.current;
-    // generous hit radius (17) so a single TAP on/near the glowing dot advances —
-    // ages 2-6 can't reliably drag, so tapping along the path now works too.
-    while (i < total && pts[i] && Math.hypot(pts[i].x - p.x, pts[i].y - p.y) < 17) i++;
+  // coordinate-free core: advance the trace to point index `i` (no clamping by caller).
+  const advanceTo = (i) => {
     if (i !== idxRef.current) {
       idxRef.current = i; setIdx(i);
       advSfx('tap');
@@ -203,9 +204,20 @@ export function Tracing({ cat, speak, onDone, I, Star, Burst }) {
       }
     }
   };
+  const advance = (e) => {
+    const p = toSvg(e); const pts = ptsRef.current;
+    let i = idxRef.current;
+    // generous hit radius (17) so a single TAP on/near the glowing dot advances —
+    // ages 2-6 can't reliably drag, so tapping along the path now works too.
+    while (i < total && pts[i] && Math.hypot(pts[i].x - p.x, pts[i].y - p.y) < 17) i++;
+    advanceTo(i);
+  };
+  // D-pad / keyboard (TV mode): no pointer location, so step one point along the path.
+  const step = () => advanceTo(Math.min(idxRef.current + 1, total));
   // tap (or, if a child can, drag) anywhere near the glowing dot to advance the trace
   const down = (e) => { e.preventDefault(); advance(e); };
   const move = (e) => { if (e.buttons || e.pressure > 0) { e.preventDefault(); advance(e); } };
+  const onKey = (e) => { if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowRight') { e.preventDefault(); step(); } };
   const next = ptsRef.current[Math.min(idx, total)] || { x: 0, y: 0 };
 
   return (
@@ -213,7 +225,8 @@ export function Tracing({ cat, speak, onDone, I, Star, Burst }) {
       <div className="game-ask hud-pill">Trace the <b style={{ color: 'var(--zc)', margin: '0 4px' }}>{tr.label}</b>!</div>
       <div className={`trace-paper ${idx >= total ? 'donebounce' : ''}`}>
         <svg ref={svgRef} viewBox="0 0 100 100" style={{ touchAction: 'none', width: '100%', height: '100%' }}
-          onPointerDown={down} onPointerMove={move}>
+          onPointerDown={down} onPointerMove={move}
+          {...(dpad ? { 'data-nav': '', 'data-nav-default': '', tabIndex: 0, onKeyDown: onKey } : {})}>
           <path d={tr.d} fill="none" stroke="#e3d7c5" strokeWidth="11" strokeLinecap="round" strokeLinejoin="round" />
           <path d={tr.d} fill="none" stroke="#cbbda6" strokeWidth="2.5" strokeDasharray="0.5 6" strokeLinecap="round" />
           <path ref={pathRef} d={tr.d} fill="none" stroke="var(--zc)" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round"
@@ -278,6 +291,7 @@ export function ColorSort({ speak, onDone, I, Star, Burst }) {
           return (
             <div key={c.id} className={`monster ${chomp === c.id ? 'chomp' : ''} ${shake === c.id ? 'shakex' : ''} ${sel && !full ? 'targetable' : ''}`}
               data-monster={c.id} style={{ '--mc': c.hex }} role={full ? undefined : 'button'} tabIndex={full ? -1 : 0}
+              {...(full ? {} : { 'data-nav': '' })}
               aria-label={full ? `${c.name} monster — full` : `Feed the ${c.name} monster`}
               onClick={() => { if (!full) feed(c.id); }} onKeyDown={(e) => { if (!full && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); feed(c.id); } }}>
               <span className="m-eye l" /><span className="m-eye r" />
@@ -287,8 +301,9 @@ export function ColorSort({ speak, onDone, I, Star, Burst }) {
         })}
       </div>
       <div className="sort-tray">
-        {items.map((it) => fed.includes(it.k) ? null : (
+        {items.map((it, i) => fed.includes(it.k) ? null : (
           <button key={it.k} className={`sort-item ${sel === it.k ? 'sel' : ''}`} style={{ color: it.col.hex }}
+            data-nav {...(i === 0 ? { 'data-nav-default': '' } : {})}
             aria-label={it.col.name} aria-pressed={sel === it.k} onClick={() => pick(it)}>
             <Illu name="swatch" hex={it.col.hex} size={52} />
           </button>

@@ -28,6 +28,18 @@ export const advSfx = (name) => {
   else if (name === 'pop') tone(900, 0, 0.06, 'square', 0.05);
 };
 
+// Resume the WebAudio context (autoplay policy needs a user gesture). ctx() creates
+// + resumes; exposed as a clear entry point and primed on the first gesture below so
+// SFX and narration are audible from the first OK press — important on TV/WebView.
+export function unlockAudio() { return ctx(); }
+function installAudioPrimer() {
+  if (typeof window === 'undefined') return;
+  const events = ['pointerdown', 'keydown', 'touchstart', 'mousedown'];
+  const handler = () => { try { ctx(); } catch { /* ignore */ } events.forEach((ev) => window.removeEventListener(ev, handler, true)); };
+  events.forEach((ev) => window.addEventListener(ev, handler, true));
+}
+installAudioPrimer();
+
 // music: soft alternating pad
 let musicTimer = null;
 export function setMusic(on) {

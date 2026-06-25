@@ -1,0 +1,8 @@
+# Android build artifacts & local config (this is a wrapper project built separately)
+.gradle/
+build/
+local.properties
+*.iml
+.idea/
+.cxx/
+captures/

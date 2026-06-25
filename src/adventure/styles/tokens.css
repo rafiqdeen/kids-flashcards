@@ -52,3 +52,14 @@
   /* bottom clearance reserved on every screen for the persistent nav dock */
   --dock-h: calc(82px + env(safe-area-inset-bottom, 0px));
 }
+
+/* TV / D-pad mode (set by src/adventure/tv.js → <html data-tv="on">). One attribute
+   switches on the 10-foot layout, overscan-safe insets and the high-contrast focus
+   ring. Every TV rule is gated on html[data-tv="on"], so the touch/mobile build is
+   byte-for-byte unchanged when it's off. */
+html[data-tv="on"] {
+  --safe-pad: max(32px, env(safe-area-inset-left, 0px));   /* overscan inset for fixed chrome */
+  --dock-h: calc(112px + max(24px, env(safe-area-inset-bottom, 0px)));
+  --ring: var(--gold);
+  --ring-halo: rgba(255, 200, 61, .30);
+}

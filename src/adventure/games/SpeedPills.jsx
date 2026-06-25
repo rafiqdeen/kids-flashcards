@@ -11,7 +11,7 @@ export function SpeedPills({ value, onChange, disabled }) {
     <div className="speed-ctl" role="group" aria-label="Speed">
       {SPEEDS.map((s, i) => (
         <button key={s.key} type="button" className={`speed-btn ${value === i ? 'on' : ''}`}
-          aria-pressed={value === i} disabled={disabled} aria-label={`${s.label} speed`}
+          data-nav aria-pressed={value === i} disabled={disabled} aria-label={`${s.label} speed`}
           onClick={() => { advSfx('tap'); onChange(i); }}>
           <span className="speed-emoji" aria-hidden="true">{s.emoji}</span>{s.label}
         </button>

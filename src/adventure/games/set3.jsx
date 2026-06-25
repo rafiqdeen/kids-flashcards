@@ -7,16 +7,17 @@ import { StarsModal as AdvStarsModal } from './StarsModal.jsx';
 import { advSfx } from '../audio.js';
 
 /* ============ 9. PEEK-A-BOO (whack-a-mole pops) ============ */
-export function PeekABoo({ cat, speak, onDone, I, Star, Burst }) {
+export function PeekABoo({ cat, speak, onDone, I, Star, Burst, dpad }) {
   const pool = advGamePool(cat.id, 4, true);
   const GOAL = 6;
   const [score, setScore] = useState(0);
   const [target, setTarget] = useState(pool[0]);
   const [up, setUp] = useState({});       // hole -> {card, k, leaving, caught}
-  const [spd, setSpd] = useState(1);     // index into SPEEDS (default Normal)
+  const [spd, setSpd] = useState(dpad ? 0 : 1);     // index into SPEEDS (default Normal; slowest on D-pad)
   const [end, setEnd] = useState(null);
   const [burst, setBurst] = useState(false);
   const wrongs = useRef(0);
+  const doneRef = useRef(false); // synchronous goal lock — a rapid post-goal OK on another mole must not fire onDone twice
   const stateRef = useRef({});
   stateRef.current = { up, target, end };
   const mul = SPEEDS[spd].mul;
@@ -43,13 +44,14 @@ export function PeekABoo({ cat, speak, onDone, I, Star, Burst }) {
 
   const tap = (h) => {
     const o = up[h];
-    if (!o || o.leaving || o.caught || end) return;
+    if (!o || o.leaving || o.caught || end || doneRef.current) return;
     if (o.card.word === target.word) {
       advSfx('pop');
       const ns = score + 1; setScore(ns);
       setUp((u) => ({ ...u, [h]: { ...o, caught: true } }));
       setTimeout(() => setUp((u) => ({ ...u, [h]: null })), 560);
       if (ns >= GOAL) {
+        doneRef.current = true; // lock out further taps before the async end state lands
         speak('You found them all!'); setBurst(true);
         const stars = wrongs.current === 0 ? 3 : wrongs.current <= 2 ? 2 : 1;
         setTimeout(() => { setEnd({ stars }); onDone('peek', stars); }, 800);
@@ -69,7 +71,7 @@ export function PeekABoo({ cat, speak, onDone, I, Star, Burst }) {
 
   return (
     <div className="game-area gctr" data-screen-label="Peek-a-Boo">
-      <button className="qprompt game-ask" onClick={() => speak(`Find the ${target.word}!`)}>
+      <button className="qprompt game-ask" data-nav data-nav-default="" onClick={() => speak(`Find the ${target.word}!`)}>
         <I n="sound" s={22} /> Tap the <b>{target.word}</b>!
       </button>
       <SpeedPills value={spd} onChange={setSpd} />
@@ -79,7 +81,7 @@ export function PeekABoo({ cat, speak, onDone, I, Star, Burst }) {
             <span className="hole-shadow" aria-hidden="true" />
             {up[h] && (
               <button className={`peek-pop ${up[h].leaving ? 'leaving' : ''} ${up[h].caught ? 'caught' : ''}`}
-                aria-label={up[h].card.word} onClick={() => tap(h)}>
+                data-nav aria-label={up[h].card.word} onClick={() => tap(h)}>
                 <span style={{ color: 'var(--zc)' }}>{cardArt(up[h].card, 60)}</span>
               </button>
             )}
@@ -90,7 +92,7 @@ export function PeekABoo({ cat, speak, onDone, I, Star, Burst }) {
       <div className="game-round">{score} / {GOAL}</div>
       {burst && <Burst onDone={() => setBurst(false)} />}
       {end && <AdvStarsModal stars={end.stars} title="Peek-a-boo champ!" sub="Nobody can hide from you!" I={I} Star={Star}
-        onAgain={() => { setEnd(null); setScore(0); wrongs.current = 0; setUp({}); }} onBack={() => onDone('__back')} />}
+        onAgain={() => { setEnd(null); setScore(0); wrongs.current = 0; doneRef.current = false; setUp({}); }} onBack={() => onDone('__back')} />}
     </div>
   );
 }
@@ -147,15 +149,15 @@ export function MagicCube({ cat, speak, onDone, I, Star, Burst }) {
 
   return (
     <div className="game-area gctr" data-screen-label="Magic Cube">
-      <button className="qprompt game-ask" onClick={() => speak(`Find the ${target.word}!`)}>
+      <button className="qprompt game-ask" data-nav onClick={() => speak(`Find the ${target.word}!`)}>
         <I n="sound" s={22} /> Spin to the <b>{target.word}</b>, then tap it!
       </button>
       <div className="cube-stage">
-        <button className="gbtn white round cube-turn" aria-label="Turn left" onClick={() => turn(-1)}><I n="back" s={26} /></button>
+        <button className="gbtn white round cube-turn" data-nav aria-label="Turn left" onClick={() => turn(-1)}><I n="back" s={26} /></button>
         <div className="cube-holder">
           <div className={`cube-scene ${winFx ? 'win' : ''}`} style={{ width: CUBE, height: CUBE }}>
             <div className="cube" style={{ transform: `rotateX(-13deg) rotateY(${rotY}deg)` }}
-              role="button" tabIndex={0} aria-label={`Cube showing ${faces[frontIdx].word}. Tap if it is the ${target.word}.`}
+              role="button" tabIndex={0} data-nav data-nav-default="" aria-label={`Cube showing ${faces[frontIdx].word}. Tap if it is the ${target.word}.`}
               onClick={tapCube} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); tapCube(); } }}>
               {faces.map((c, i) => (
                 <span key={c.word} className="cube-face" style={{ transform: `rotateY(${i * 90}deg) translateZ(${tz}px)` }}>
@@ -169,7 +171,7 @@ export function MagicCube({ cat, speak, onDone, I, Star, Burst }) {
           </div>
           <span className="cube-shadow" aria-hidden="true" />
         </div>
-        <button className="gbtn white round cube-turn" aria-label="Turn right" onClick={() => turn(1)}><I n="next" s={26} /></button>
+        <button className="gbtn white round cube-turn" data-nav aria-label="Turn right" onClick={() => turn(1)}><I n="next" s={26} /></button>
       </div>
       <div className="game-round">{round + 1} / {ROUNDS}</div>
       {burst && <Burst onDone={() => setBurst(false)} />}
@@ -304,15 +306,15 @@ function JigBoard({ boardSize, wide, card, picCount, pic, lvl, onLevel, onNextPi
   return (
     <div className="game-area jig-game" data-screen-label="Picture Pieces">
       <div className="jig-top">
-        <button className="qprompt game-ask" onClick={() => speak(`Find the ${card.word}!`)}>
+        <button className="qprompt game-ask" data-nav onClick={() => speak(`Find the ${card.word}!`)}>
           <I n="sound" s={22} /> Build the <b>{card.word}</b>!
         </button>
-        <button className="gbtn white round jig-peek" aria-label="Peek at the picture" onClick={doPeek} style={{ minHeight: 50, width: 50 }}><I n="eye" s={22} /></button>
+        <button className="gbtn white round jig-peek" data-nav aria-label="Peek at the picture" onClick={doPeek} style={{ minHeight: 50, width: 50 }}><I n="eye" s={22} /></button>
       </div>
       <div className="jig-levels" role="tablist" aria-label="How many pieces">
         {JIG_LEVELS.map((L, i) => (
           <button key={L.key} className={`jig-lvl ${lvl === i ? 'on' : ''}`} role="tab" aria-selected={lvl === i}
-            onClick={() => { if (i !== lvl) { advSfx('tap'); onLevel(i); } }}>
+            data-nav onClick={() => { if (i !== lvl) { advSfx('tap'); onLevel(i); } }}>
             <b>{L.label}</b><small>{L.n * L.n} pieces</small>
           </button>
         ))}
@@ -324,7 +326,7 @@ function JigBoard({ boardSize, wide, card, picCount, pic, lvl, onLevel, onNextPi
             const filled = placed.includes(p.idx);
             return (
               <div key={p.idx} className={`jig-slot ${filled ? 'filled' : ''} ${wrong === p.idx ? 'wrong' : ''} ${sel !== null && !filled ? 'targetable' : ''}`}
-                style={{ gridColumn: p.c + 1, gridRow: p.r + 1 }} data-jigslot={p.idx}
+                style={{ gridColumn: p.c + 1, gridRow: p.r + 1 }} data-jigslot={p.idx} {...(filled ? {} : { 'data-nav': '' })}
                 role={filled ? undefined : 'button'} tabIndex={filled ? -1 : 0} aria-label={filled ? 'Placed piece' : 'Empty spot — tap to place'}
                 onClick={() => place(p.idx)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); place(p.idx); } }}>
                 {filled && <span className="jig-fit" style={{ left: -kr, top: -kr, width: box, height: box }}>{art(p)}</span>}
@@ -334,8 +336,9 @@ function JigBoard({ boardSize, wide, card, picCount, pic, lvl, onLevel, onNextPi
         </div>
         <div className="jig-tray-panel" style={{ '--tray-h': `${boardSize}px` }}>
           <div className="jig-tray">
-            {tray.filter((idx) => !placed.includes(idx) && idx < pieces.length).map((idx) => (
+            {tray.filter((idx) => !placed.includes(idx) && idx < pieces.length).map((idx, ti) => (
               <button key={idx} className={`jig-piece ${sel === idx ? 'sel' : ''}`} aria-label="Puzzle piece" aria-pressed={sel === idx}
+                data-nav {...(ti === 0 ? { 'data-nav-default': '' } : {})}
                 style={{ width: box * trayScale, height: box * trayScale }} onClick={() => pick(idx)}>
                 <span className="jig-pc-in" style={{ width: box, height: box, transform: `scale(${trayScale})` }}>{art(pieces[idx])}</span>
               </button>
@@ -388,10 +391,11 @@ export function EggSurprise({ cat, speak, onDone, I, Star, Burst }) {
     <div className="game-area gctr" data-screen-label="Egg Surprise">
       <div className="game-ask hud-pill">Tap tap tap… who's inside?</div>
       <div className="egg-row">
-        {pool.map((c) => {
+        {pool.map((c, ei) => {
           const t = taps[c.word] || 0;
           return (
             <button key={c.word} className={`egg ${wob === c.word ? 'wob' : ''}`}
+              data-nav {...(ei === 0 ? { 'data-nav-default': '' } : {})}
               aria-label={t >= 3 ? c.word : 'Mystery egg'} onClick={() => tap(c)}>
               {t < 3 ? (
                 <>

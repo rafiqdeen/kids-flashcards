@@ -22,7 +22,7 @@ export function StonesChallenge({ speak, onWin }) {
       <div className="stones-row">
         {order.map((n) => (
           <button key={n} className={`stone ${n < next ? 'stepped' : ''} ${wig === n ? 'wig' : ''}`}
-            aria-label={`Stone ${n}`} disabled={n < next} onClick={() => tap(n)}><b>{n}</b></button>
+            data-nav aria-label={`Stone ${n}`} disabled={n < next} onClick={() => tap(n)}><b>{n}</b></button>
         ))}
       </div>
     </>
@@ -48,7 +48,7 @@ export function ColorBridgeChallenge({ speak, onWin }) {
       <div className="stones-row">
         {planks.map((c) => (
           <button key={c} className={`plank ${ORDER.indexOf(c) < next ? 'stepped' : ''} ${wig === c ? 'wig' : ''}`}
-            style={{ '--pc': HEX[c] }} aria-label={c + ' plank'} disabled={ORDER.indexOf(c) < next} onClick={() => tap(c)} />
+            data-nav style={{ '--pc': HEX[c] }} aria-label={c + ' plank'} disabled={ORDER.indexOf(c) < next} onClick={() => tap(c)} />
         ))}
       </div>
     </>
@@ -60,7 +60,7 @@ export function ChestChallenge({ speak, onWin, I }) {
   return (
     <>
       <div className="comic-task">Tap the treasure box!</div>
-      <button className={`quest-chest static ${open ? 'open' : ''}`} data-testid="quest-chest" aria-label="Treasure chest"
+      <button className={`quest-chest static ${open ? 'open' : ''}`} data-nav data-testid="quest-chest" aria-label="Treasure chest"
         onClick={() => { if (!open) { setOpen(true); speak('Treasure! Wow!'); setTimeout(onWin, 700); } }}>
         <span className="qc-lid" />
         <span className="qc-body"><I n="gift" s={40} /></span>

@@ -1,11 +1,13 @@
 // StoryLand.jsx — the Story Land hub (shelf of 4 illustrated book covers) and
 // the per-book comic host. Ported from adventure-story.jsx `StoryLand`; the
 // four book wrappers are inlined onto the shared ComicBook engine.
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { HeroMascot } from '../art/Mascot.jsx';
 import { ComicBook } from '../story/ComicBook.jsx';
 import { BookCover } from '../story/BookCover.jsx';
 import { SHELF, LOST_STAR, DAY_OUT, QUEST, SUPER_DAY } from '../story/books.js';
+import { useInitialFocus } from '../hooks/useSpatialNav.js';
+import { useBackHandler } from '../hooks/useBackButton.js';
 
 const STORIES = {
   book: { graph: LOST_STAR, start: 'p1', total: 5 },
@@ -17,14 +19,17 @@ const STORIES = {
 export function StoryLand({ speak, onExit, I, Burst }) {
   const [story, setStory] = useState(null);
   useEffect(() => { if (!story) { const t = setTimeout(() => speak('Welcome to Story Land! Pick a comic book!'), 400); return () => clearTimeout(t); } }, [story]); // eslint-disable-line react-hooks/exhaustive-deps
+  const rootRef = useRef(null);
+  useInitialFocus(rootRef, [story]); // shelf: first book; comic: its default (panel/next)
+  useBackHandler(() => { if (story) setStory(null); else onExit(); }); // BACK: comic→shelf→map
 
   if (story) {
     const cfg = STORIES[story];
     const label = SHELF.find((s) => s.id === story).title;
     return (
-      <div className="level story-wrap">
+      <div className="level story-wrap" ref={rootRef}>
         <div className="level-hud">
-          <button className="gbtn white round" aria-label="Back to Story Land" data-testid="story-exit"
+          <button className="gbtn white round" data-nav aria-label="Back to Story Land" data-testid="story-exit"
             onClick={() => setStory(null)} style={{ minHeight: 50, width: 50 }}><I n="back" s={22} /></button>
           <span className="hud-brand" style={{ fontSize: 22 }}>{label}</span>
           <span style={{ flex: 1 }} />
@@ -35,9 +40,9 @@ export function StoryLand({ speak, onExit, I, Burst }) {
   }
 
   return (
-    <div className="level storyland" data-screen-label="Story Land">
+    <div className="level storyland" data-screen-label="Story Land" ref={rootRef}>
       <div className="level-hud">
-        <button className="gbtn white round" aria-label="Back to map" data-testid="level-exit"
+        <button className="gbtn white round" data-nav aria-label="Back to map" data-testid="level-exit"
           onClick={onExit} style={{ minHeight: 50, width: 50 }}><I n="back" s={22} /></button>
         <span className="hud-brand" style={{ fontSize: 22 }}>Story Land 📚</span>
         <span style={{ flex: 1 }} />
@@ -47,6 +52,7 @@ export function StoryLand({ speak, onExit, I, Burst }) {
         <div className="book-row">
           {SHELF.map((b, i) => (
             <button key={b.id} className="book-cover" data-testid={`story-${b.id}`}
+              data-nav data-nav-default={i === 0 ? '' : undefined}
               style={{ '--b1': b.c1, '--b2': b.c2, animationDelay: `${i * 90}ms` }}
               onClick={() => { setStory(b.id); speak(b.title + '!'); }}>
               <span className="book-spine" aria-hidden="true" />

@@ -43,7 +43,7 @@ export function CountingTrain({ cat, speak, onDone, I, Star, Burst }) {
 
   return (
     <div className="game-area gctr" data-screen-label="Counting Train">
-      <button className="qprompt game-ask" onClick={() => speak(`Load ${goal} ${item.word.toLowerCase()}s!`)}>
+      <button className="qprompt game-ask" data-nav onClick={() => speak(`Load ${goal} ${item.word.toLowerCase()}s!`)}>
         <I n="sound" s={22} /> Load <b>{goal}</b> {item.word.toLowerCase()}s!
       </button>
       <div className={`train ${depart ? 'depart' : ''}`} aria-hidden="true">
@@ -62,6 +62,7 @@ export function CountingTrain({ cat, speak, onDone, I, Star, Burst }) {
       <div className="count-tray">
         {[...Array(7)].map((_, i) => (
           <button key={round + '-' + i} className={`count-item ${hopping.includes(i) ? 'hop' : ''}`}
+            data-nav {...(i === 0 ? { 'data-nav-default': '' } : {})}
             aria-label={item.word} disabled={hopping.includes(i)} onClick={() => tap(i)}>
             <span style={{ color: 'var(--zc)' }}><Illu name={illuName} size={48} /></span>
           </button>
@@ -116,6 +117,7 @@ export function ShadowPuzzle({ cat, speak, onDone, I, Star, Burst }) {
             const filled = placed.includes(c.id);
             return (
               <div key={c.id} className={`shadow-slot ${filled ? 'filled' : ''} ${wig === c.id ? 'wiggle' : ''} ${sel && !filled ? 'targetable' : ''}`}
+                {...(filled ? {} : { 'data-nav': '' })}
                 data-shadow={c.id} role={filled ? undefined : 'button'} tabIndex={filled ? -1 : 0} aria-label={filled ? c.word : 'Mystery shadow — tap to match'}
                 onClick={() => place(c.id)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); place(c.id); } }}>
                 <span className="shadow-art" style={{ color: 'var(--zc)' }}>{cardArt(c, 72)}</span>
@@ -125,8 +127,9 @@ export function ShadowPuzzle({ cat, speak, onDone, I, Star, Burst }) {
         </div>
         <div className="shadow-hint" aria-hidden="true">Tap a friend, then tap its shadow</div>
         <div className="sort-tray">
-          {tray.map((c) => placed.includes(c.id) ? null : (
-            <button key={c.id} className={`sort-item ${sel === c.id ? 'sel' : ''}`} aria-label={c.word} aria-pressed={sel === c.id}
+          {tray.map((c, i) => placed.includes(c.id) ? null : (
+            <button key={c.id} className={`sort-item ${sel === c.id ? 'sel' : ''}`} data-nav {...(i === 0 ? { 'data-nav-default': '' } : {})}
+              aria-label={c.word} aria-pressed={sel === c.id}
               style={{ color: 'var(--zc)' }} onClick={() => pick(c)}>{cardArt(c, 56)}</button>
           ))}
         </div>
@@ -140,7 +143,7 @@ export function ShadowPuzzle({ cat, speak, onDone, I, Star, Burst }) {
 }
 
 /* ============ 7. PIP SAYS ============ */
-export function PipSays({ cat, speak, onDone, I, Star, Burst }) {
+export function PipSays({ cat, speak, onDone, I, Star, Burst, dpad }) {
   const cards = pickCards(cat.id, 3);
   const SAYS_ROUNDS = 4;
   const [round, setRound] = useState(0);       // seq length 2,3,4,5
@@ -150,7 +153,7 @@ export function PipSays({ cat, speak, onDone, I, Star, Burst }) {
   const [pos, setPos] = useState(0);
   const [end, setEnd] = useState(null);
   const [burst, setBurst] = useState(false);
-  const [spd, setSpd] = useState(1);     // index into SPEEDS (default Normal)
+  const [spd, setSpd] = useState(dpad ? 0 : 1);     // index into SPEEDS (default Normal)
   const mul = SPEEDS[spd].mul;
   const mulRef = useRef(mul); mulRef.current = mul;
   const timers = useRef([]);
@@ -205,6 +208,7 @@ export function PipSays({ cat, speak, onDone, I, Star, Burst }) {
       <div className="says-row">
         {cards.map((c, i) => (
           <button key={c.id} className={`says-card ${lit === i ? 'lit' : ''} ${phase === 'dance' ? 'bop' : ''}`}
+            data-nav {...(i === 0 ? { 'data-nav-default': '' } : {})}
             style={{ animationDelay: `${i * .12}s` }} aria-label={c.word}
             disabled={phase !== 'play'} onClick={() => tap(i)}>
             <span style={{ color: 'var(--zc)' }}>{cardArt(c, 64)}</span>
@@ -240,8 +244,9 @@ export function CalmCorner({ speak }) {
   return (
     <div className="game-area calm" data-screen-label="Calm Corner">
       <span className="calm-moon" aria-hidden="true" />
-      {flies.map((f) => (
+      {flies.map((f, i) => (
         <button key={f.k} className={`firefly ${f.glow ? 'glow' : ''}`} aria-label="Firefly"
+          data-nav {...(i === 0 ? { 'data-nav-default': '' } : {})}
           style={{ left: `${f.left}%`, top: `${f.top}%`, animationDuration: `${f.dur}s`, animationDelay: `${f.delay}s` }}
           onClick={() => tapFly(f.k)} />
       ))}

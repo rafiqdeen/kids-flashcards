@@ -9,8 +9,15 @@
 import { useRef, useEffect, useState } from 'react';
 import { HeroMascot } from '../art/Mascot.jsx';
 import { advSfx, ADV_SET } from '../audio.js';
+import { useInitialFocus } from '../hooks/useSpatialNav.js';
+import { useBackHandler } from '../hooks/useBackButton.js';
+import { isTvMode } from '../tv.js';
 
 const RES = 1000;
+// TV/D-pad coloring grid: the canvas is divided into GRID×GRID cells; in dpad mode a
+// highlighted cell cursor is moved with the arrows and OK fills/stamps that cell. 12×12
+// (~83px cells at RES) is big enough to aim from the couch and matches paint-by-number.
+const GRID = 12;
 
 // Gentle haptics, gated on the in-app motion setting (absent on most desktops).
 const vibrate = (pattern) => {
@@ -170,7 +177,7 @@ const eraserCursor = (() => {
   return `url("data:image/svg+xml,${encodeURIComponent(svg)}") 6 26, cell`;
 })();
 
-export function AdventurePaint({ pid, onExit, speak, announce, Burst, I, Star }) {
+export function AdventurePaint({ pid, onExit, speak, announce, Burst, I, Star, dpad = false }) {
   const say = announce || (() => {}); // caption channel for silent actions
   const canvasRef = useRef(null), ctxRef = useRef(null), drawing = useRef(false),
     lastPt = useRef(null), undoStack = useRef([]), redoStack = useRef([]), hueRef = useRef(0), distRef = useRef(0),
@@ -178,7 +185,7 @@ export function AdventurePaint({ pid, onExit, speak, announce, Burst, I, Star })
     restoringRef = useRef(false), persistTimer = useRef(null), wallRef = useRef({ t: null, bd: null });
   const [color, setColor] = useState('#ef4444');
   const [size, setSize] = useState(SIZES[1].w);
-  const [tool, setTool] = useState('brush');
+  const [tool, setTool] = useState(dpad ? 'fill' : 'brush'); // TV lands in paint-by-number (Magic fill)
   const [bType, setBType] = useState('marker');
   const [stamp, setStamp] = useState('star');
   const [tmpl, setTmpl] = useState('cat');
@@ -203,6 +210,9 @@ export function AdventurePaint({ pid, onExit, speak, announce, Burst, I, Star })
     return s;
   });
 
+  const rootRef = useRef(null);
+  const [cur, setCur] = useState({ c: Math.floor(GRID / 2), r: Math.floor(GRID / 2) }); // dpad grid cursor
+
   useEffect(() => {
     const c = canvasRef.current; c.width = RES; c.height = RES;
     const ctx = c.getContext('2d', { willReadFrequently: true });
@@ -210,6 +220,28 @@ export function AdventurePaint({ pid, onExit, speak, announce, Burst, I, Star })
     restore('cat');
     return () => clearTimeout(persistTimer.current);
   }, []);
+
+  // TV: land focus on the canvas (the data-nav-default) when Paint opens.
+  useInitialFocus(rootRef);
+  // TV BACK: peel off the topmost open overlay, else leave Paint. (One handler for the
+  // whole screen since Paint's modals are inline state, not separate components.)
+  useBackHandler(() => {
+    if (viewArt) { if (confirmDel) setConfirmDel(false); else setViewArt(null); }
+    else if (showGallery) setShowGallery(false);
+    else if (doneArt) setDoneArt(null);
+    else if (askClear) setAskClear(false);
+    else { flushPersist(); onExit(); }
+  });
+  // TV: when an overlay opens, land focus on its first control (the global navigator
+  // then scopes arrow movement to that [role=dialog]).
+  const overlayKey = `${viewArt ? 'v' : ''}${showGallery ? 'g' : ''}${doneArt ? 'd' : ''}${askClear ? 'c' : ''}${confirmDel ? 'x' : ''}`;
+  useEffect(() => {
+    if (!isTvMode() || !overlayKey || !rootRef.current) return;
+    const dlgs = rootRef.current.querySelectorAll('[role="dialog"]');
+    const dlg = dlgs[dlgs.length - 1];
+    const el = dlg && (dlg.querySelector('[data-nav-default]') || dlg.querySelector('[data-nav]'));
+    if (el) requestAnimationFrame(() => { try { el.focus(); } catch { /* ignore */ } });
+  }, [overlayKey]);
 
   const key = (t) => `pip-adv-doodle-${pid}-${t}`;
   const setInk = (v) => { inkRef.current = v; setHasInk(v); }; // ref stays in sync for synchronous reads
@@ -417,6 +449,49 @@ export function AdventurePaint({ pid, onExit, speak, announce, Burst, I, Star })
     return 'filled';
   };
 
+  // Eyedropper at a canvas point — shared by the pointer path and the D-pad cursor.
+  const pickAt = (p) => {
+    const d = ctxRef.current.getImageData(Math.round(p.x), Math.round(p.y), 1, 1).data;
+    if (d[3] > 20) {
+      setColor('#' + [d[0], d[1], d[2]].map((v) => v.toString(16).padStart(2, '0')).join(''));
+      setTool('brush'); advSfx('yes');
+      // name the picked colour aloud when it's (near) a known swatch
+      let best = null, bestD = Infinity;
+      for (const c of COLORS) { const cr = hexRgb(c.hex); const dd = (cr.r - d[0]) ** 2 + (cr.g - d[1]) ** 2 + (cr.b - d[2]) ** 2; if (dd < bestD) { bestD = dd; best = c; } }
+      speak(best && bestD < 1200 ? `${best.name}!` : 'Got it!');
+    } else { speak('Tap a colour to pick it!'); advSfx('tap'); }
+  };
+  // Flood-fill at a canvas point + the shared feedback — shared by pointer + D-pad.
+  const fillAt = (p) => {
+    const r = floodFill(p.x, p.y);
+    if (r === 'filled') { setInk(true); markInkedNow(); persist(); speak('Whoosh!'); advSfx('yes'); vibrate(15); }
+    else if (r === 'same') { advSfx('tap'); } // already this colour — gentle, no scolding
+    else { speak('Tap inside the shape!'); advSfx('tap'); } // never respond silently
+  };
+
+  // ---- D-pad coloring: a movable grid cell; OK runs the active tool at its centre ----
+  const cellCenter = (c, r) => ({ x: (c + 0.5) * RES / GRID, y: (r + 0.5) * RES / GRID });
+  const dpadAct = () => {
+    const p = cellCenter(cur.c, cur.r);
+    if (tool === 'pick') { pickAt(p); return; }
+    if (tool === 'fill') { fillAt(p); return; }
+    // brush / stamp / eraser → one discrete dab at the cell centre (reuses dab()).
+    pushUndo(); setInk(true); markInkedNow(); dab(p); persist();
+    if (tool === 'stamp') { advSfx('pop'); vibrate(12); } else advSfx('tap');
+  };
+  const onCanvasKey = (e) => {
+    if (!dpad) return;
+    const k = e.key;
+    if (k === 'Enter' || k === ' ' || k === 'Spacebar') { e.preventDefault(); e.stopPropagation(); dpadAct(); return; }
+    let { c, r } = cur;
+    if (k === 'ArrowLeft' && c > 0) c--;
+    else if (k === 'ArrowRight' && c < GRID - 1) c++;
+    else if (k === 'ArrowUp' && r > 0) r--;
+    else if (k === 'ArrowDown' && r < GRID - 1) r++;
+    else return; // at a grid edge → let the key bubble so the global nav hops to the rail/templates/HUD
+    e.preventDefault(); e.stopPropagation(); setCur({ c, r });
+  };
+
   const start = (e) => {
     // Ignore extra fingers / palm rests: only the primary pointer draws, and once
     // a stroke owns the canvas a second pointer can't hijack it.
@@ -425,25 +500,8 @@ export function AdventurePaint({ pid, onExit, speak, announce, Burst, I, Star })
     activeId.current = e.pointerId;
     try { canvasRef.current.setPointerCapture(e.pointerId); } catch { /* unsupported */ }
     const p = pos(e);
-    if (tool === 'pick') { // eyedropper: adopt the colour under the tap
-      const d = ctxRef.current.getImageData(Math.round(p.x), Math.round(p.y), 1, 1).data;
-      if (d[3] > 20) {
-        setColor('#' + [d[0], d[1], d[2]].map((v) => v.toString(16).padStart(2, '0')).join(''));
-        setTool('brush'); advSfx('yes');
-        // name the picked colour aloud when it's (near) a known swatch
-        let best = null, bestD = Infinity;
-        for (const c of COLORS) { const cr = hexRgb(c.hex); const dd = (cr.r - d[0]) ** 2 + (cr.g - d[1]) ** 2 + (cr.b - d[2]) ** 2; if (dd < bestD) { bestD = dd; best = c; } }
-        speak(best && bestD < 1200 ? `${best.name}!` : 'Got it!');
-      } else { speak('Tap a colour to pick it!'); advSfx('tap'); }
-      return;
-    }
-    if (tool === 'fill') {
-      const r = floodFill(p.x, p.y);
-      if (r === 'filled') { setInk(true); markInkedNow(); persist(); speak('Whoosh!'); advSfx('yes'); vibrate(15); }
-      else if (r === 'same') { advSfx('tap'); } // already this colour — gentle, no scolding
-      else { speak('Tap inside the shape!'); advSfx('tap'); } // never respond silently
-      return;
-    }
+    if (tool === 'pick') { pickAt(p); return; }   // eyedropper: adopt the colour under the tap
+    if (tool === 'fill') { fillAt(p); return; }
     pushUndo(); drawing.current = true; setInk(true); markInkedNow(); lastPt.current = p; distRef.current = 0; dab(p);
     if (tool === 'stamp') { advSfx('pop'); vibrate(12); }
   };
@@ -541,12 +599,12 @@ export function AdventurePaint({ pid, onExit, speak, announce, Burst, I, Star })
   };
 
   return (
-    <div className="level paint-level" data-screen-label="Paint studio">
+    <div className="level paint-level" data-screen-label="Paint studio" ref={rootRef}>
       <div className="level-hud">
-        <button className="gbtn white round" aria-label="Back to map" data-testid="level-exit" onClick={() => { flushPersist(); onExit(); }} style={{ minHeight: 50, width: 50 }}><I n="close" s={22} /></button>
+        <button className="gbtn white round" data-nav aria-label="Back to map" data-testid="level-exit" onClick={() => { flushPersist(); onExit(); }} style={{ minHeight: 50, width: 50 }}><I n="close" s={22} /></button>
         <span className="hud-brand" style={{ fontSize: 22 }}>Paint Studio 🎨</span>
         <span style={{ flex: 1 }} />
-        <button className="gbtn gold small" data-testid="paint-done" disabled={!hasInk} onClick={finish}>
+        <button className="gbtn gold small" data-nav data-testid="paint-done" disabled={!hasInk} onClick={finish}>
           <I n="check" s={20} /> I&apos;m done!
         </button>
       </div>
@@ -554,7 +612,7 @@ export function AdventurePaint({ pid, onExit, speak, announce, Burst, I, Star })
       <div className="paint-body">
         <div className="paint-tmpls" role="tablist" aria-label="Coloring pages">
           {TEMPLATES.map((t) => (
-            <button key={t.id} className={`ptmpl ${tmpl === t.id ? 'on' : ''}`} role="tab" aria-selected={tmpl === t.id}
+            <button key={t.id} className={`ptmpl ${tmpl === t.id ? 'on' : ''}`} role="tab" data-nav aria-selected={tmpl === t.id}
               aria-label={inked.has(t.id) ? `${t.label} (has your drawing)` : t.label}
               data-testid={`paint-tmpl-${t.id}`} onClick={() => switchTmpl(t.id)}>
               {inked.has(t.id) && <span className="ptmpl-dot" aria-hidden="true" />}
@@ -574,8 +632,14 @@ export function AdventurePaint({ pid, onExit, speak, announce, Burst, I, Star })
             )}
             <canvas ref={canvasRef} className="paint-canvas" data-testid="paint-canvas" aria-label="Drawing canvas"
               style={{ cursor: tool === 'pick' ? 'copy' : tool === 'brush' ? brushCursor(color) : tool === 'fill' ? fillCursor(color) : tool === 'stamp' ? stampCursor(color) : tool === 'eraser' ? eraserCursor : 'crosshair', touchAction: 'none' }}
+              {...(dpad ? { 'data-nav': '', 'data-nav-default': '', tabIndex: 0, onKeyDown: onCanvasKey } : {})}
               onPointerDown={start} onPointerMove={move} onPointerUp={end} onPointerCancel={end} />
-            {!hasInk && tmpl === 'blank' && <div className="paint-hint" role="note">Pick a colour and draw! ✏️</div>}
+            {dpad && (
+              <div className="paint-dpad-cursor" data-testid="paint-dpad-cursor" aria-hidden="true"
+                style={{ left: `${cur.c * 100 / GRID}%`, top: `${cur.r * 100 / GRID}%`, width: `${100 / GRID}%`, height: `${100 / GRID}%` }} />
+            )}
+            {!hasInk && tmpl === 'blank' && !dpad && <div className="paint-hint" role="note">Pick a colour and draw! ✏️</div>}
+            {!hasInk && dpad && <div className="paint-hint" role="note">Move with the arrows, press OK to color! 🎨</div>}
           </div>
         </div>
 
@@ -583,7 +647,7 @@ export function AdventurePaint({ pid, onExit, speak, announce, Burst, I, Star })
           <div className="paint-swatches" role="radiogroup" aria-label="Colors">
             {COLORS.map((c) => (
               <button key={c.hex} className={`pswatch ${color === c.hex && tool !== 'eraser' ? 'sel' : ''}`}
-                role="radio" aria-checked={color === c.hex && tool !== 'eraser'} aria-label={c.name}
+                role="radio" data-nav aria-checked={color === c.hex && tool !== 'eraser'} aria-label={c.name}
                 style={{ background: c.hex }} onClick={() => { const wasEraser = tool === 'eraser'; setColor(c.hex); if (wasEraser) setTool('brush'); advSfx('tap'); speak(wasEraser ? `${c.name} brush` : c.name); }} />
             ))}
           </div>
@@ -598,7 +662,7 @@ export function AdventurePaint({ pid, onExit, speak, announce, Burst, I, Star })
               { id: 'eraser', label: 'Eraser', icon: 'eraser' },
               { id: 'pick', label: 'Color picker', icon: 'eye' },
             ].map((t) => (
-              <button key={t.id} className={`ptool ${tool === t.id ? 'sel' : ''}`} role="radio" aria-checked={tool === t.id}
+              <button key={t.id} className={`ptool ${tool === t.id ? 'sel' : ''}`} role="radio" data-nav aria-checked={tool === t.id}
                 aria-label={t.label} data-testid={`paint-tool-${t.id}`}
                 onClick={() => { setTool(t.id); advSfx('tap'); speak(t.label + '!'); }}>
                 <I n={t.icon} s={24} />
@@ -606,7 +670,7 @@ export function AdventurePaint({ pid, onExit, speak, announce, Burst, I, Star })
             ))}
           </div>
 
-          <button className={`pmirror ${mirror ? 'on' : ''}`} aria-pressed={mirror} data-testid="paint-mirror"
+          <button className={`pmirror ${mirror ? 'on' : ''}`} data-nav aria-pressed={mirror} data-testid="paint-mirror"
             onClick={() => { say(!mirror ? 'Mirror on' : 'Mirror off'); setMirror((m) => !m); advSfx('tap'); }}>
             <I n="mirror" s={18} /> <small>Mirror{mirror ? ' on' : ''}</small>
           </button>
@@ -614,7 +678,7 @@ export function AdventurePaint({ pid, onExit, speak, announce, Burst, I, Star })
           {tool === 'brush' && (
             <div className="paint-subrow" role="radiogroup" aria-label="Brush style">
               {BRUSH_TYPES.map((b) => (
-                <button key={b.id} className={`pchip ${bType === b.id ? 'on' : ''}`} role="radio" aria-checked={bType === b.id}
+                <button key={b.id} className={`pchip ${bType === b.id ? 'on' : ''}`} role="radio" data-nav aria-checked={bType === b.id}
                   data-testid={`paint-brush-${b.id}`} onClick={() => { setBType(b.id); advSfx('tap'); speak(b.label); }}>
                   {b.id === 'rainbow' ? <span className="pdot rainbow" /> : b.id === 'marker' ? <span className="pdot" style={{ background: color }} /> : <I n={b.id === 'spray' ? 'spray' : 'sparkle'} s={17} />}
                   {b.label}
@@ -625,7 +689,7 @@ export function AdventurePaint({ pid, onExit, speak, announce, Burst, I, Star })
           {tool === 'stamp' && (
             <div className="paint-subrow" role="radiogroup" aria-label="Stamp shape">
               {STAMPS.map((s) => (
-                <button key={s.id} className={`pchip ${stamp === s.id ? 'on' : ''}`} role="radio" aria-checked={stamp === s.id}
+                <button key={s.id} className={`pchip ${stamp === s.id ? 'on' : ''}`} role="radio" data-nav aria-checked={stamp === s.id}
                   data-testid={`paint-stamp-${s.id}`} onClick={() => { setStamp(s.id); advSfx('tap'); speak(s.label); }}>{s.label}</button>
               ))}
             </div>
@@ -633,7 +697,7 @@ export function AdventurePaint({ pid, onExit, speak, announce, Burst, I, Star })
 
           <div className="ptools size-row" role="radiogroup" aria-label="Size">
             {SIZES.map((b) => (
-              <button key={b.id} className={`ptool ${size === b.w ? 'sel' : ''}`} role="radio" aria-checked={size === b.w}
+              <button key={b.id} className={`ptool ${size === b.w ? 'sel' : ''}`} role="radio" data-nav aria-checked={size === b.w}
                 aria-label={`Size ${b.id === 's' ? 'small' : b.id === 'm' ? 'medium' : 'big'}`}
                 onClick={() => { setSize(b.w); advSfx('tap'); say(`${b.id === 's' ? 'Small' : b.id === 'm' ? 'Medium' : 'Big'} brush`); }}>
                 <span className="pdot" style={{ width: b.dot, height: b.dot, background: tool === 'eraser' ? '#a8b0bc' : color }} />
@@ -642,16 +706,16 @@ export function AdventurePaint({ pid, onExit, speak, announce, Burst, I, Star })
           </div>
 
           <div className="ptools act-row">
-            <button className="ptool" aria-label="Undo" disabled={!canUndo} onClick={undo}><I n="undo" s={24} /></button>
-            <button className="ptool" aria-label="Redo" disabled={!canRedo} onClick={redo}><I n="redo" s={24} /></button>
+            <button className="ptool" data-nav aria-label="Undo" disabled={!canUndo} onClick={undo}><I n="undo" s={24} /></button>
+            <button className="ptool" data-nav aria-label="Redo" disabled={!canRedo} onClick={redo}><I n="redo" s={24} /></button>
           </div>
 
-          <button className="clear-btn" aria-label="Start over" data-testid="paint-clear" onClick={() => { advSfx('tap'); setAskClear(true); }}>
+          <button className="clear-btn" data-nav aria-label="Start over" data-testid="paint-clear" onClick={() => { advSfx('tap'); setAskClear(true); }}>
             <I n="trash" s={18} /> <small>Start over</small>
           </button>
 
           {gallery.length > 0 && (
-            <button className="paint-shelf-btn" data-testid="paint-gallery-open" aria-label={`My art, ${gallery.length} paintings`}
+            <button className="paint-shelf-btn" data-nav data-testid="paint-gallery-open" aria-label={`My art, ${gallery.length} paintings`}
               onClick={() => { advSfx('tap'); setShowGallery(true); }}>
               <div className="paint-shelf" aria-hidden="true">
                 {gallery.slice(0, 6).map((a) => <img key={a.id} src={a.data} alt="" />)}
@@ -664,20 +728,20 @@ export function AdventurePaint({ pid, onExit, speak, announce, Burst, I, Star })
 
       {askClear && (
         <div className="complete-scrim" data-testid="paint-clear-confirm">
-          <div className="complete-card">
+          <div className="complete-card" role="dialog" aria-modal="true" aria-label="Keep your picture?">
             <HeroMascot state="encourage" size={90} />
             <h2>Keep your picture?</h2>
             <p>You worked hard on this!</p>
             <div className="complete-actions">
-              <button className="gbtn gold" data-testid="paint-clear-keep" onClick={() => { advSfx('tap'); setAskClear(false); }}>Keep painting</button>
-              <button className="clear-confirm-wipe" data-testid="paint-clear-wipe" onClick={wipe}>Start over with a clean page</button>
+              <button className="gbtn gold" data-nav data-nav-default="" data-testid="paint-clear-keep" onClick={() => { advSfx('tap'); setAskClear(false); }}>Keep painting</button>
+              <button className="clear-confirm-wipe" data-nav data-testid="paint-clear-wipe" onClick={wipe}>Start over with a clean page</button>
             </div>
           </div>
         </div>
       )}
       {doneArt && (
         <div className="complete-scrim" data-testid="paint-complete">
-          <div className="complete-card">
+          <div className="complete-card" role="dialog" aria-modal="true" aria-label="Beautiful!">
             <HeroMascot state="cheer" size={90} />
             {Star && <div className="paint-stars">{[0, 1, 2].map((i) => <Star key={i} s={34} />)}</div>}
             <div className="paint-frame"><img src={doneArt} alt="Your finished painting" /></div>
@@ -685,10 +749,10 @@ export function AdventurePaint({ pid, onExit, speak, announce, Burst, I, Star })
             {tmpl !== 'blank' && <p className="done-subject">You painted a <b>{(TEMPLATES.find((x) => x.id === tmpl) || {}).label}</b>!</p>}
             <p>{saveOk ? 'Saved to your art shelf.' : "Couldn't save it here — tap Save it to keep it!"}</p>
             <div className="complete-actions">
-              <button className={saveOk ? 'gbtn blue' : 'gbtn gold'} data-testid="paint-save-device" onClick={saveToDevice}><I n="paper" s={18} /> Save it</button>
-              <button className="gbtn blue" data-testid="paint-print" onClick={() => printArt(doneArt)}><I n="print" s={18} /> Print</button>
-              <button className="gbtn" onClick={fresh}>Paint another</button>
-              <button className="gbtn gold" onClick={() => { setDoneArt(null); onExit(); }}>Back to the map</button>
+              <button className={saveOk ? 'gbtn blue' : 'gbtn gold'} data-nav data-nav-default="" data-testid="paint-save-device" onClick={saveToDevice}><I n="paper" s={18} /> Save it</button>
+              <button className="gbtn blue" data-nav data-testid="paint-print" onClick={() => printArt(doneArt)}><I n="print" s={18} /> Print</button>
+              <button className="gbtn" data-nav onClick={fresh}>Paint another</button>
+              <button className="gbtn gold" data-nav onClick={() => { setDoneArt(null); onExit(); }}>Back to the map</button>
             </div>
             <p className="gallery-privacy">Your art stays on this device. 🔒</p>
           </div>
@@ -696,41 +760,41 @@ export function AdventurePaint({ pid, onExit, speak, announce, Burst, I, Star })
       )}
       {showGallery && (
         <div className="complete-scrim" data-testid="paint-gallery" onClick={() => setShowGallery(false)}>
-          <div className="gallery-card" onClick={(e) => e.stopPropagation()}>
+          <div className="gallery-card" role="dialog" aria-modal="true" aria-label="My Art" onClick={(e) => e.stopPropagation()}>
             <h2>My Art</h2>
             <div className="gallery-grid">
-              {gallery.map((a) => (
-                <button key={a.id} className="gallery-item" data-testid="paint-gallery-item" onClick={() => { advSfx('tap'); setConfirmDel(false); setViewArt(a); }}>
+              {gallery.map((a, gi) => (
+                <button key={a.id} className="gallery-item" data-nav data-nav-default={gi === 0 ? '' : undefined} data-testid="paint-gallery-item" onClick={() => { advSfx('tap'); setConfirmDel(false); setViewArt(a); }}>
                   <img src={a.data} alt={`My ${a.label} painting`} />
                 </button>
               ))}
             </div>
             <p className="gallery-privacy">All your art stays on this device. 🔒</p>
-            <button className="gbtn gold" onClick={() => setShowGallery(false)}>Close</button>
+            <button className="gbtn gold" data-nav onClick={() => setShowGallery(false)}>Close</button>
           </div>
         </div>
       )}
       {viewArt && (
         <div className="complete-scrim" data-testid="paint-gallery-view" onClick={() => { setConfirmDel(false); setViewArt(null); }}>
-          <div className="complete-card" onClick={(e) => e.stopPropagation()}>
+          <div className="complete-card" role="dialog" aria-modal="true" aria-label="Your painting" onClick={(e) => e.stopPropagation()}>
             <div className="paint-frame"><img src={viewArt.data} alt={`My ${viewArt.label} painting`} /></div>
             {confirmDel ? (
               <>
                 <h2>Throw it away?</h2>
                 <div className="complete-actions">
-                  <button className="gbtn gold" onClick={() => { advSfx('tap'); setConfirmDel(false); }}>Keep it</button>
-                  <button className="clear-confirm-wipe" data-testid="paint-art-delete-yes" onClick={() => { setConfirmDel(false); removeArt(viewArt.id); }}>Yes, throw it away</button>
+                  <button className="gbtn gold" data-nav data-nav-default="" onClick={() => { advSfx('tap'); setConfirmDel(false); }}>Keep it</button>
+                  <button className="clear-confirm-wipe" data-nav data-testid="paint-art-delete-yes" onClick={() => { setConfirmDel(false); removeArt(viewArt.id); }}>Yes, throw it away</button>
                 </div>
               </>
             ) : (
               <>
                 <h2>You painted this!</h2>
                 <div className="complete-actions">
-                  <button className="gbtn blue" onClick={() => printArt(viewArt.data)}><I n="print" s={18} /> Print</button>
-                  <button className="gbtn blue" onClick={() => downloadArt(viewArt.data, viewArt.label)}><I n="paper" s={18} /> Save it</button>
-                  <button className="gbtn gold" onClick={() => setViewArt(null)}>Back</button>
+                  <button className="gbtn blue" data-nav data-nav-default="" onClick={() => printArt(viewArt.data)}><I n="print" s={18} /> Print</button>
+                  <button className="gbtn blue" data-nav onClick={() => downloadArt(viewArt.data, viewArt.label)}><I n="paper" s={18} /> Save it</button>
+                  <button className="gbtn gold" data-nav onClick={() => setViewArt(null)}>Back</button>
                 </div>
-                <button className="clear-confirm-wipe" data-testid="paint-art-delete" onClick={() => { advSfx('tap'); setConfirmDel(true); }}>Delete this painting</button>
+                <button className="clear-confirm-wipe" data-nav data-testid="paint-art-delete" onClick={() => { advSfx('tap'); setConfirmDel(true); }}>Delete this painting</button>
               </>
             )}
           </div>

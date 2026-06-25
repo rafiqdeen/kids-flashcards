@@ -1,7 +1,7 @@
 // App.jsx — inner app for one profile. Owns world/level routing, per-profile
 // progress (pip-adv-prog-<pid>), settings, and the complete modal. Ported from
 // adventure-app.jsx `App`. BuddyContext flows the chosen buddy app-wide.
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { BuddyContext } from './art/buddy.js';
 import { I, Star } from './art/icons.jsx';
 import { Burst } from './components/Burst.jsx';
@@ -21,6 +21,7 @@ import { CATEGORIES } from './data/categories.js';
 import { load, save } from './data/profiles.js';
 import { useAdvSettings } from './hooks/useAdvSettings.js';
 import { useSpeech } from './hooks/useSpeech.js';
+import { useTvMode } from './hooks/useTvMode.js';
 
 export function App({ pid, profile, onProfiles, onBuddyChange }) {
   const [muted, setMuted] = useState(false);
@@ -31,6 +32,8 @@ export function App({ pid, profile, onProfiles, onBuddyChange }) {
   const [navNonce, setNavNonce] = useState(0); // bump to re-tap the active dock tab back to a room's root
   const [settings, updateSetting] = useAdvSettings(pid);
   const { speak, speaking } = useSpeech(muted || !settings.voice);
+  const [tv] = useTvMode(); // TV/remote mode — single gate for D-pad behaviour (no-op when off)
+  const lastZoneRef = useRef(null); // remember the zone we left so World can restore focus on return
 
   useEffect(() => { save('pip-adv-prog-' + pid, adv); }, [adv, pid]);
 
@@ -42,6 +45,7 @@ export function App({ pid, profile, onProfiles, onBuddyChange }) {
   // keep its stale, finished state.
   const goRoute = (r) => { setComplete(null); setNavNonce((n) => n + 1); setRoute(r); };
   const play = (cat, nodeId, zone) => {
+    if (cat) lastZoneRef.current = cat.id; // for World focus restore on return
     goRoute({ name: nodeId, cat, zone });
     speak(nodeId === 'learn' ? `Let's learn ${cat.name}!` : nodeId === 'quiz' ? `${cat.name} quiz! Ready?` : nodeId === 'activity' ? 'Play time!' : 'Treasure time!');
   };
@@ -89,10 +93,10 @@ export function App({ pid, profile, onProfiles, onBuddyChange }) {
   useEffect(() => { if (onBuddyChange) onBuddyChange(buddy); }, [buddy]);
   return (
     <BuddyContext.Provider value={buddy}>
-      {route.name === 'world' && <World adv={adv} onPlay={play} muted={muted} setMuted={setMuted} speak={speak} onSettings={() => setShowSettings(true)} profile={profile} buddy={buddy} onProfiles={onProfiles} />}
+      {route.name === 'world' && <World adv={adv} onPlay={play} muted={muted} setMuted={setMuted} speak={speak} onSettings={() => setShowSettings(true)} profile={profile} buddy={buddy} onProfiles={onProfiles} focusZone={lastZoneRef.current} />}
       {route.name === 'story' && <StoryLand key={'story-' + navNonce} speak={speak} onExit={backToWorld} I={I} Star={Star} Burst={Burst} />}
-      {route.name === 'paint' && <AdventurePaint key={'paint-' + navNonce} pid={pid} onExit={() => (route.from === 'activity' ? goRoute({ name: 'activity', cat: route.cat, zone: route.zone }) : backToWorld())} speak={speak} announce={announce} Burst={Burst} I={I} Star={Star} />}
-      {route.name === 'activity' && <ActivityHub key={'activity-' + navNonce} cat={cat} speak={speak}
+      {route.name === 'paint' && <AdventurePaint key={'paint-' + navNonce} pid={pid} dpad={tv} onExit={() => (route.from === 'activity' ? goRoute({ name: 'activity', cat: route.cat, zone: route.zone }) : backToWorld())} speak={speak} announce={announce} Burst={Burst} I={I} Star={Star} />}
+      {route.name === 'activity' && <ActivityHub key={'activity-' + navNonce} cat={cat} speak={speak} dpad={tv}
         onExit={backToWorld} autoGame={route.autoGame} disabledGames={settings.disabled}
         onPaint={() => goRoute({ name: 'paint', cat, zone, from: 'activity' })}
         onRecord={(gameId, stars) => setAdv((a) => ({ ...a, __play: { act: { ...((a.__play || {}).act || {}), [gameId]: stars } } }))}

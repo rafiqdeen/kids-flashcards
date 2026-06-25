@@ -12,10 +12,12 @@
     "test:decks": "node visual-tests/decks.mjs",
     "test:functional": "node visual-tests/functional.mjs",
     "test:e2e": "node visual-tests/e2e.mjs",
+    "test:dpad": "node visual-tests/dpad.mjs",
+    "test:dpad-deep": "node visual-tests/dpad-deep.mjs",
     "test:zones": "node visual-tests/zones.mjs",
     "test:snapshots": "node visual-tests/snapshots.mjs",
     "test:diff": "node visual-tests/diff.mjs",
-    "test": "npm run lint && npm run test:decks && npm run build && npm run test:functional && npm run test:e2e",
+    "test": "npm run lint && npm run test:decks && npm run build && npm run test:functional && npm run test:e2e && npm run test:dpad && npm run test:dpad-deep",
     "test:all": "npm run test && npm run test:zones && npm run test:snapshots"
   },
   "dependencies": {
